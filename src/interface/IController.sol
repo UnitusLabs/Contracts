@@ -360,12 +360,12 @@ interface IControllerV2 {
      * @param _supplyCapacity The _supplyCapacity of _iToken
      * @param _borrowCapacity The _borrowCapacity of _iToken
      * @param _distributionFactor The _distributionFactor of _iToken
-     * @param _iTokenEModeID The eEMode ID of _iToken
-     * @param _eModeLtv The collateral factor of _iToken in the eMode
-     * @param _eModeLiqThreshold The liquidation Threshold of _iToken in the  eMode
+     * @param _iTokenSModeID The SMode ID of _iToken
+     * @param _sModeLtv The collateral factor of _iToken in the sMode
+     * @param _sModeLiqThreshold The liquidation Threshold of _iToken in the  sMode
      * @param _liquidationThreshold The liquidation Threshold of _iToken
-     * @param _debtCeiling The _debtCeiling of _iToken in isolation mode, notice its decimal `DEBT_CEILING_DECIMALS`
-     * @param _borrowableInIsolation True if the _iToken is borrowable in isolation mode
+     * @param _debtCeiling The _debtCeiling of _iToken in segregation mode, notice its decimal `DEBT_CEILING_DECIMALS`
+     * @param _borrowableInSegregation True if the _iToken is borrowable in segregation mode
      */
     struct AddMarketV2LocalVars {
         address _iToken;
@@ -374,12 +374,12 @@ interface IControllerV2 {
         uint256 _supplyCapacity;
         uint256 _borrowCapacity;
         uint256 _distributionFactor;
-        uint8 _eModeID;
-        uint256 _eModeLtv;
-        uint256 _eModeLiqThreshold;
+        uint8 _sModeID;
+        uint256 _sModeLtv;
+        uint256 _sModeLiqThreshold;
         uint256 _liquidationThreshold;
         uint256 _debtCeiling;
-        bool _borrowableInIsolation;
+        bool _borrowableInSegregation;
     }
 
     function _addMarketV2(AddMarketV2LocalVars memory _vars) external;
@@ -394,7 +394,7 @@ interface IControllerV2ExtraBase {
         uint256 newDebtCeiling
     );
 
-    event BorrowableInIsolationChanged(address iToken, bool borrowable);
+    event BorrowableInSegregationChanged(address iToken, bool borrowable);
 
     event NewTimeLock(address oldTimeLock, address newTimeLock);
 
@@ -403,14 +403,14 @@ interface IControllerV2ExtraBase {
         address newTimeLockStrategy
     );
 
-    event EModeAdded(
-        uint8 eModeId,
+    event SModeAdded(
+        uint8 sModeId,
         uint256 liquidationIncentive,
         uint256 closeFactor,
         string label
     );
 
-    event EModeChanged(
+    event SModeChanged(
         address iToken,
         uint8 oldCategoryId,
         uint8 newCategoryId
@@ -422,33 +422,33 @@ interface IControllerV2ExtraBase {
         uint256 _newLiquidationThresholdMantissa
     );
 
-    event NewEModeLiquidationIncentive(
-        uint8 _eModeID,
-        uint256 _oldEModeLiquidationIncentive,
-        uint256 _newEModeLiquidationIncentive
+    event NewSModeLiquidationIncentive(
+        uint8 _sModeID,
+        uint256 _oldSModeLiquidationIncentive,
+        uint256 _newSModeLiquidationIncentive
     );
 
-    event NewEModeCloseFactor(
-        uint8 _eModeID,
-        uint256 _oldEModeCloseFactor,
-        uint256 _newEModeCloseFactor
+    event NewSModeCloseFactor(
+        uint8 _sModeID,
+        uint256 _oldSModeCloseFactor,
+        uint256 _newSModeCloseFactor
     );
 
-    event NewEModeLTV(
+    event NewSModeLTV(
         address _iToken,
-        uint256 _oldEModeLTV,
-        uint256 _newEModeLTV
+        uint256 _oldSModeLTV,
+        uint256 _newSModeLTV
     );
 
-    event NewEModeLiquidationThreshold(
+    event NewSModeLiquidationThreshold(
         address _iToken,
-        uint256 _oldEModeLiquidationThreshold,
-        uint256 _newEModeLiquidationThreshold
+        uint256 _oldSModeLiquidationThreshold,
+        uint256 _newSModeLiquidationThreshold
     );
 
-    event EModeEntered(uint8 oldEModeId, uint8 newEModeId, address account);
+    event SModeEntered(uint8 oldSModeId, uint8 newSModeId, address account);
 
-    function getIsolationModeState(
+    function getSegregationModeState(
         address _account
     ) external view returns (bool, address);
 
@@ -506,7 +506,7 @@ interface IControllerV2ExtraImplicit is IControllerV2ExtraBase {
 
     function _setDebtCeiling(address _iToken, uint256 _newDebtCeiling) external;
 
-    function _setBorrowableInIsolation(
+    function _setBorrowableInSegregation(
         address _iToken,
         bool _borrowable
     ) external;
@@ -515,17 +515,17 @@ interface IControllerV2ExtraImplicit is IControllerV2ExtraBase {
 
     function _setTimeLockStrategy(address _newTimeLockStrategy) external;
 
-    function _addEMode(
+    function _addSMode(
         uint256 _liquidationIncentive,
         uint256 _closeFactor,
         string memory _label
     ) external;
 
-    function _setEMode(
+    function _setSMode(
         address _iToken,
-        uint8 _eModeID,
-        uint256 _eModeLtv,
-        uint256 _eModeLiqThreshold
+        uint8 _sModeID,
+        uint256 _sModeLtv,
+        uint256 _sModeLiqThreshold
     ) external;
 
     function _setLiquidationThreshold(
@@ -533,19 +533,19 @@ interface IControllerV2ExtraImplicit is IControllerV2ExtraBase {
         uint256 _newLiquidationThresholdMantissa
     ) external;
 
-    function _setEModeLiquidationIncentive(
-        uint8 _eModeID,
+    function _setSModeLiquidationIncentive(
+        uint8 _sModeID,
         uint256 _liquidationIncentive
     ) external;
 
-    function _setEModeCloseFactor(
-        uint8 _eModeID,
+    function _setSModeCloseFactor(
+        uint8 _sModeID,
         uint256 _closeFactor
     ) external;
 
-    function _setEModeLTV(address _iToken, uint256 _ltv) external;
+    function _setSModeLTV(address _iToken, uint256 _ltv) external;
 
-    function _setEModeLiquidationThreshold(
+    function _setSModeLiquidationThreshold(
         address _iToken,
         uint256 _liquidationThreshold
     ) external;
@@ -572,14 +572,14 @@ interface IControllerV2ExtraImplicit is IControllerV2ExtraBase {
         bool _isLiquidation
     ) external view returns (uint256, uint256, uint256, uint256);
 
-    function enterEMode(uint8 _newEModeId) external;
+    function enterSMode(uint8 _newSModeId) external;
 
-    function getEModeLength() external view returns (uint256 _eModeLength);
+    function getSModeLength() external view returns (uint256 _sModeLength);
 
     function getCollateralFactor(
         address _iToken,
-        uint8 _accountEModeID,
-        uint8 _iTokenEModeID,
+        uint8 _accountSModeID,
+        uint8 _iTokenSModeID,
         bool _isLiquidation
     ) external view returns (uint256 _collateralFactor);
 
@@ -589,9 +589,9 @@ interface IControllerV2ExtraImplicit is IControllerV2ExtraBase {
         address _iToken
     ) external view returns (uint256);
 
-    function getEModeLTV(address _iToken) external view returns (uint256);
+    function getSModeLTV(address _iToken) external view returns (uint256);
 
-    function getEModeLiquidationThreshold(
+    function getSModeLiquidationThreshold(
         address _iToken
     ) external view returns (uint256);
 }
@@ -636,14 +636,14 @@ interface IController is
         bool redeemPaused;
         // Whether market's borrow is paused
         bool borrowPaused;
-        // eMode config
+        // sMode config
         // TODO: explanation
-        uint8 eModeID;
-        //  Whether market can be borrowed in isolation mode
-        bool borrowableInIsolation;
+        uint8 sModeID;
+        //  Whether market can be borrowed in segregation mode
+        bool borrowableInSegregation;
         // Debt ceiling for the market
         uint256 debtCeiling;
-        // Current debt in isolation mode
+        // Current debt in segregation mode
         uint256 currentDebt;
     }
 
@@ -659,11 +659,11 @@ interface IController is
 
     function DEBT_CEILING_DECIMALS() external view returns (uint256);
 
-    function accountsEMode(
+    function accountsSMode(
         address account
-    ) external view returns (uint8 eModeID);
+    ) external view returns (uint8 sModeID);
 
-    function eModes(
+    function sModes(
         uint256 index
     )
         external

@@ -83,7 +83,7 @@ contract iETH is Base {
      */
     function mint(
         address _recipient
-    ) external payable nonReentrant tracksValue settleInterest {
+    ) public payable nonReentrant tracksValue settleInterest {
         _mintInternal(_recipient, msg.value);
     }
 
@@ -92,7 +92,7 @@ contract iETH is Base {
      *        and add markets to caller's markets list for liquidity calculations.
      */
     function mintForSelfAndEnterMarket()
-        external
+        public
         payable
         nonReentrant
         tracksValue
@@ -110,7 +110,7 @@ contract iETH is Base {
     function redeem(
         address _from,
         uint256 _redeemiToken
-    ) external nonReentrant settleInterest {
+    ) public nonReentrant settleInterest {
         _redeemInternal(
             _from,
             _redeemiToken,
@@ -126,7 +126,7 @@ contract iETH is Base {
     function redeemUnderlying(
         address _from,
         uint256 _redeemUnderlying
-    ) external nonReentrant settleInterest {
+    ) public nonReentrant settleInterest {
         _redeemInternal(
             _from,
             _redeemUnderlying.rdivup(_exchangeRateInternal()),
@@ -138,9 +138,7 @@ contract iETH is Base {
      * @dev Caller borrows tokens from the protocol to their own address.
      * @param _borrowAmount The amount of the underlying token to borrow.
      */
-    function borrow(
-        uint256 _borrowAmount
-    ) external nonReentrant settleInterest {
+    function borrow(uint256 _borrowAmount) public nonReentrant settleInterest {
         _borrowInternal(msg.sender, _borrowAmount);
     }
 
@@ -148,7 +146,7 @@ contract iETH is Base {
      * @dev Caller repays their own borrow.
      */
     function repayBorrow()
-        external
+        public
         payable
         nonReentrant
         tracksValue
@@ -164,7 +162,7 @@ contract iETH is Base {
      */
     function repayBorrowBehalf(
         address _borrower
-    ) external payable nonReentrant tracksValue settleInterest {
+    ) public payable nonReentrant tracksValue settleInterest {
         _repayInternal(msg.sender, _borrower, msg.value);
         if (openCash > 0) msg.sender.transfer(openCash);
     }
@@ -177,7 +175,7 @@ contract iETH is Base {
     function liquidateBorrow(
         address _borrower,
         address _assetCollateral
-    ) external payable nonReentrant tracksValue settleInterest {
+    ) public payable nonReentrant tracksValue settleInterest {
         _liquidateBorrowInternal(_borrower, msg.value, _assetCollateral);
     }
 

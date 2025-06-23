@@ -53,4 +53,6 @@ interface IiToken {
     function controller() external view returns (IController);
 
     function getAccrualInterestUnit() external view returns (uint256);
+
+    function borrowRatePerUnit() external view returns (uint256);
 }

@@ -11,7 +11,12 @@ async function main() {
   const msdController = await deployments.get("msdController");
   const {iTokenConfigs} = await loadConfig(getNetworkName(hre.network));
 
-  for (let iToken in iTokenConfigs) {
+  // const toDeploy = Object.keys(iTokenConfigs);
+  const toDeploy = ["icbBTC"];
+
+  for (let iToken of toDeploy) {
+    console.log(iToken);
+
     await deployiToken(
       hre,
       deployer,

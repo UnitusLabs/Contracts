@@ -109,14 +109,6 @@ contract TimeLockStrategy is Initializable, Ownable {
             _newLimitConfig.minDailyLimit,
             _newLimitConfig.midDailyLimit
         );
-
-        // TODO:: Should reset `currentDailyAmount` if it is not zero?
-        // Should `dailyStartTime` to be equal to current time?
-        // Or it should be `block.timestamp / DAY * DAY`?
-        assetData[_asset] = AssetData({
-            currentDailyAmount: 0,
-            dailyStartTime: block.timestamp
-        });
     }
 
     function _setWhitelistExtraConfig(
@@ -132,6 +124,15 @@ contract TimeLockStrategy is Initializable, Ownable {
             _newLimitConfig.minDailyLimit,
             _newLimitConfig.midDailyLimit
         );
+    }
+
+    function _resetAssetData(address _asset) external onlyOwner {
+        require(IController(controller).hasiToken(_asset), "Invalid asset!");
+
+        assetData[_asset] = AssetData({
+            currentDailyAmount: 0,
+            dailyStartTime: block.timestamp.div(DAY).mul(DAY)
+        });
     }
 
     function _getSingleWaitSeconds(

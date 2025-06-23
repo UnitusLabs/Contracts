@@ -120,7 +120,7 @@ contract ControllerStorageV2 is ControllerStorageV1 {
  *  ControllerStorageV2Extra should inherit from ControllerStorageV2
  *  But it expands the `MarketV1` to `MarketV2` by expanding serveral market configuration
  *  Therefore, just copying all the storage from it.
- *  Only ControllerExtraXXX have access to the new storages regarding V2 features such as eModes etc..
+ *  Only ControllerExtraXXX have access to the new storages regarding V2 features such as sModes etc..
  */
 
 contract ControllerStorageV2Extra {
@@ -159,15 +159,15 @@ contract ControllerStorageV2Extra {
         bool redeemPaused;
         // Whether market's borrow is paused
         bool borrowPaused;
-        // eMode config
-        // EMode Id
-        uint8 eModeID;
-        // Isolation config
-        // Whether market can be borrowed in isolation mode
-        bool borrowableInIsolation;
+        // Supercharged Mode config
+        // SMode Id
+        uint8 sModeID;
+        // Segregation config
+        // Whether market can be borrowed in segregation mode
+        bool borrowableInSegregation;
         // Debt ceiling for the market
         uint256 debtCeiling;
-        // Current debt in isolation mode
+        // Current debt in segregation mode
         uint256 currentDebt;
     }
 
@@ -253,23 +253,23 @@ contract ControllerStorageV2Extra {
     /// @notice decimals for debt ceiling
     uint256 public constant DEBT_CEILING_DECIMALS = 2;
 
-    // eMode configs
-    uint256 constant MAX_EMODE_ID = 255;
+    // sMode configs
+    uint256 constant MAX_SMODE_ID = 255;
 
-    struct EModeConfig {
+    struct SModeConfig {
         uint256 liquidationIncentive; // 1.01e18
         uint256 closeFactor; // 0.5e18
         string label; // Stablecoins
     }
 
-    EModeConfig[] public eModes;
+    SModeConfig[] public sModes;
 
     // [0] -> Normal LTV
     // [1] -> Normal Liquidation Threshold
-    // [2] -> eMode LTV
-    // [3] -> eMode Liquidation Threshold
+    // [2] -> sMode LTV
+    // [3] -> sMode Liquidation Threshold
     mapping(address => uint256[4]) public marketCollateralFactor;
 
-    // account => eMode id
-    mapping(address => uint8) public accountsEMode;
+    // account => sMode id
+    mapping(address => uint8) public accountsSMode;
 }

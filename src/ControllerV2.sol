@@ -150,7 +150,7 @@ contract ControllerV2 is Controller, ControllerStorageV2, IControllerV2 {
         }
     }
 
-    fallback() external payable {
+    fallback() external {
         require(extraImplicit != address(0), "No Extra Implicit address!");
         _delegate(extraImplicit);
     }

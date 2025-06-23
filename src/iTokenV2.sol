@@ -162,7 +162,7 @@ contract iTokenV2 is iToken {
      */
     function redeemFromSelfAndExitMarket(
         uint256 _redeemiToken
-    ) external nonReentrant settleInterest {
+    ) public nonReentrant settleInterest {
         _redeemInternal(
             msg.sender,
             _redeemiToken,

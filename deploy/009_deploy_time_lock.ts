@@ -16,6 +16,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     getNetworkName(hre.network)
   );
 
+  if (!timeLockStrategyConfigs) {
+    return;
+  }
+
   // Deploy time lock strategy contract
   let constructorArgs = [
     controller.address,
@@ -38,7 +42,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     false // timeLockStrategy initializes on contructor
   );
 
-  await setTimeLockStrategyData(hre);
+  // await setTimeLockStrategyData(hre);
 
   // Deploy time lock contract:
   const initArgs = [controller.address];
@@ -53,27 +57,27 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     false // DefaultTimeLock initializes on contructor
   );
 
-  await updateValue(
-    hre,
-    "controller",
-    "owner",
-    "timeLock",
-    [],
-    timeLock.address,
-    "_setTimeLock",
-    []
-  );
+  // await updateValue(
+  //   hre,
+  //   "controller",
+  //   "owner",
+  //   "timeLock",
+  //   [],
+  //   timeLock.address,
+  //   "_setTimeLock",
+  //   []
+  // );
 
-  await updateValue(
-    hre,
-    "controller",
-    "owner",
-    "timeLockStrategy",
-    [],
-    timeLockStrategy.address,
-    "_setTimeLockStrategy",
-    []
-  );
+  // await updateValue(
+  //   hre,
+  //   "controller",
+  //   "owner",
+  //   "timeLockStrategy",
+  //   [],
+  //   timeLockStrategy.address,
+  //   "_setTimeLockStrategy",
+  //   []
+  // );
 };
 
 export default func;

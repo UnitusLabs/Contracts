@@ -1,12 +1,9 @@
 import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {DeployFunction} from "hardhat-deploy/types";
 import {deploy, execute} from "../utils/deployContracts";
-import {loadConfig} from "../configs/loader";
-import {getNetworkName} from "hardhat-deploy/dist/src/utils";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deployments, getNamedAccounts, ethers} = hre;
-  const {read, log, rawTx} = deployments;
   const {deployer, owner} = await getNamedAccounts();
 
   const proxyAdmin = await deployments.get("proxyAdmin");
@@ -45,33 +42,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     iMSDV2_Impl.address,
   ]);
 
-  // Set the new interest rate model
-  const {iTokenConfigs} = await loadConfig(getNetworkName(hre.network));
-
-  let iTokens: string[] = [];
-  let interestRateModels: string[] = [];
-  for (let iToken in iTokenConfigs) {
-    let iTokenConfig = iTokenConfigs[iToken];
-
-    const interestModel = await deployments.get(iTokenConfig.interestModel);
-    const iTokenDeployment = await deployments.get(iToken);
-
-    log(iToken);
-    // log(interestModel.address);
-    // log(iTokenDeployment.address);
-
-    iTokens.push(iTokenDeployment.address);
-    interestRateModels.push(interestModel.address);
-  }
-
-  await execute(
-    hre,
-    "upgradeHelper",
-    deployer,
-    "_setInterestRateModelsOf",
-    iTokens,
-    interestRateModels
-  );
+  // Transfer upgradeHelper's ownership to multisig owner
+  await execute(hre, "upgradeHelper", deployer, "_setPendingOwner", owner);
 };
 
 export default func;

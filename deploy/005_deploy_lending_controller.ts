@@ -12,7 +12,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const oracle = await deployments.get("oracle");
 
-  const {controllerConfigs, eModeConfigs} = await loadConfig(
+  const {controllerConfigs, sModeConfigs} = await loadConfig(
     getNetworkName(hre.network)
   );
 
@@ -32,6 +32,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     hre,
     "controller", // instance name
     "ControllerV2", // contractName
+    // "ControllerV2BLP", // contractName
     [implicit.address, explicit.address], // constructorArgs
     true, // proxy
     "initializeV2", // initFunctionName
@@ -116,34 +117,34 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   await save("controller", {...controllerDeployment, abi: controllerMergedABI});
 
-  let allEModeLength = Number(await read("controller", "getEModeLength"));
-  log("Current eMode length : ", allEModeLength);
-  for (let eModeIndex in eModeConfigs) {
-    const eModeConfig = eModeConfigs[eModeIndex];
-    let hasEMode = false;
-    for (let i = 0; i < allEModeLength; i++) {
-      const eModeDetails = await read("controller", "eModes", i);
-      if (eModeConfig.label == eModeDetails.label) {
-        hasEMode = true;
+  let allSModeLength = Number(await read("controller", "getSModeLength"));
+  log("Current sMode length : ", allSModeLength);
+  for (let sModeIndex in sModeConfigs) {
+    const sModeConfig = sModeConfigs[sModeIndex];
+    let hasSMode = false;
+    for (let i = 0; i < allSModeLength; i++) {
+      const sModeDetails = await read("controller", "sModes", i);
+      if (sModeConfig.label == sModeDetails.label) {
+        hasSMode = true;
         break;
       }
     }
 
-    if (!hasEMode) {
-      console.log("Going to add eMode ", eModeConfig.label);
+    if (!hasSMode) {
+      console.log("Going to add sMode ", sModeConfig.label);
       await execute(
         hre,
         "controller",
         owner,
-        "_addEMode",
-        ethers.parseEther(eModeConfig.liquidationIncentive),
-        ethers.parseEther(eModeConfig.closeFactor),
-        eModeConfig.label
+        "_addSMode",
+        ethers.parseEther(sModeConfig.liquidationIncentive),
+        ethers.parseEther(sModeConfig.closeFactor),
+        sModeConfig.label
       );
     }
   }
-  allEModeLength = Number(await read("controller", "getEModeLength"));
-  log("After contract eMode length is: ", allEModeLength, "\n");
+  allSModeLength = Number(await read("controller", "getSModeLength"));
+  log("After contract sMode length is: ", allSModeLength, "\n");
 };
 
 export default func;

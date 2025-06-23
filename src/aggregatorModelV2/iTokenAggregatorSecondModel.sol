@@ -13,4 +13,16 @@ contract iTokenAggregatorSecondModel is iTokenAggregatorModel {
     {
         return block.timestamp;
     }
+
+    function _getAccrualInterestUnit(
+        IiToken _iToken
+    ) internal view virtual override returns (uint256) {
+        return _iToken.getAccrualInterestUnit();
+    }
+
+    function _getBorrowRatePerUnit(
+        IiToken _iToken
+    ) internal view virtual override returns (uint256) {
+        return _iToken.borrowRatePerUnit();
+    }
 }

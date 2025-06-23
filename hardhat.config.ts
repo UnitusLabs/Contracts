@@ -41,7 +41,12 @@ const config: HardhatUserConfig = {
     owner: {
       default: 0,
       mainnet: "0x145c79A1F0e1Ad5ad7fC8d99548a02A07B24F8FD",
+      bsc: "0x4006E4A788edFf483B5a0C90ca9AF9C0A497072b",
+      optimism: "0xebAA48d1C4129E93A1d286B01B56cc4981c30004",
       arbitrum: "0x9d82033BB36217B44567edC635bE926f74D1b76f",
+      polygon: "0xD111d78ceE08842624aDE8ADE280960083c0f3A9",
+      base: "0x8896d4aa54712A29384ee17EC3EBF3EE183c9630",
+      conflux: "0x376E6832830eC117000dF9106DD8E433E1d40d90",
     },
     faucetSuper: {
       default: "0x3fA8F8958b90D370291f9BBdDD617BB3E4f98a21",
@@ -71,10 +76,43 @@ const config: HardhatUserConfig = {
       deploy: ["upgrade/"],
       saveDeployments: true,
     },
+    optimism: {
+      url: node_url("optimism"),
+      accounts: accounts("optimism"),
+      deploy: ["upgrade/"],
+      saveDeployments: true,
+    },
+    // BNB Network
+    bsc: {
+      url: node_url("bsc"),
+      accounts: accounts("bsc"),
+      deploy: ["upgrade/"],
+      saveDeployments: true,
+    },
+    polygon: {
+      url: node_url("polygon"),
+      accounts: accounts("polygon"),
+      deploy: ["upgrade/"],
+      saveDeployments: true,
+    },
+    conflux: {
+      url: node_url("conflux"),
+      accounts: accounts("conflux"),
+      deploy: ["deploy/vault/"],
+      saveDeployments: true,
+    },
     sepolia: {
       url: node_url("sepolia"),
       accounts: accounts("sepolia"),
       deploy: ["upgrade/"],
+    },
+    arbitrum_sepolia: {
+      url: "http://localhost:24012/rpc", // truffle-dashboard
+      timeout: 200000,
+    },
+    base_sepolia: {
+      url: "http://localhost:24012/rpc", // truffle-dashboard
+      timeout: 200000,
     },
     goerli: {
       url: node_url("goerli"),
@@ -86,6 +124,11 @@ const config: HardhatUserConfig = {
     },
     arbitrum: {
       url: node_url("arbitrum"),
+      accounts: accounts(),
+      deploy: ["upgrade/"],
+    },
+    base: {
+      url: "https://mainnet.base.org",
       accounts: accounts(),
       deploy: ["upgrade/"],
     },

@@ -35,6 +35,14 @@ abstract contract ControllerV2ExtraBase is
     using SafeMathUpgradeable for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    constructor() public {
+        __initialize();
+    }
+
+    function __initialize() internal initializer {
+        __Ownable_init();
+    }
+
     /*********************************/
     /***** Internal  Functions *******/
     /*********************************/
@@ -49,46 +57,46 @@ abstract contract ControllerV2ExtraBase is
     }
 
     /**
-     * @dev Check if the _eModeID is valid
+     * @dev Check if the _sModeID is valid
      */
-    function _validateEModeID(uint8 _eModeID, uint8 validFrom) internal view {
-        uint8 _totalEModes = uint8(eModes.length);
+    function _validateSModeID(uint8 _sModeID, uint8 validFrom) internal view {
+        uint8 _totalSModes = uint8(sModes.length);
         require(
-            _eModeID >= validFrom && _eModeID < _totalEModes,
-            "_validateEModeID: Invalid eMode ID!"
+            _sModeID >= validFrom && _sModeID < _totalSModes,
+            "_validateSModeID: Invalid sMode ID!"
         );
     }
 
-    // Check if parameter `_liquidationIncentive` is valid in the eMode
-    function _validateEModeLiquidationIncentive(
+    // Check if parameter `_liquidationIncentive` is valid in the sMode
+    function _validateSModeLiquidationIncentive(
         uint256 _liquidationIncentive
     ) internal pure {
         require(
             _liquidationIncentive >= liquidationIncentiveMinMantissa &&
                 _liquidationIncentive <= liquidationIncentiveMaxMantissa,
-            "_validateEModeLiquidationIncentive: Invalid liquidation incentive!"
+            "_validateSModeLiquidationIncentive: Invalid liquidation incentive!"
         );
     }
 
-    // Check if parameter `_closeFactor` is valid in the eMode
-    function _validateEModeCloseFactor(uint256 _closeFactor) internal pure {
+    // Check if parameter `_closeFactor` is valid in the sMode
+    function _validateSModeCloseFactor(uint256 _closeFactor) internal pure {
         require(
             _closeFactor >= closeFactorMinMantissa &&
                 _closeFactor <= closeFactorMaxMantissa,
-            "_validateEModeCloseFactor: Invalid close factor!"
+            "_validateSModeCloseFactor: Invalid close factor!"
         );
     }
 
-    // Check if parameter `_eModeLtv` is valid in the eMode
-    function _validateEModeLTV(
+    // Check if parameter `_sModeLtv` is valid in the sMode
+    function _validateSModeLTV(
         uint256 _collateralFactor,
-        uint256 _emodeLiquidationThreshold,
-        uint256 _eModeLtv
+        uint256 _sModeLiquidationThreshold,
+        uint256 _sModeLtv
     ) internal pure {
         require(
-            _eModeLtv >= _collateralFactor &&
-                _eModeLtv <= _emodeLiquidationThreshold,
-            "_validateEModeLTV: Invalid LTV!"
+            _sModeLtv >= _collateralFactor &&
+                _sModeLtv <= _sModeLiquidationThreshold,
+            "_validateSModeLTV: Invalid LTV!"
         );
     }
 
@@ -123,35 +131,35 @@ abstract contract ControllerV2ExtraBase is
     }
 
     /**
-     * @dev Get eMode id by iToken address.
+     * @dev Get sMode id by iToken address.
      */
-    function _getiTokenEModeID(
+    function _getiTokenSModeID(
         address _iToken
-    ) internal view returns (uint8 _iTokenEModeID) {
+    ) internal view returns (uint8 _iTokenSModeID) {
         MarketV2 storage _market = markets[_iToken];
-        _iTokenEModeID = _market.eModeID;
+        _iTokenSModeID = _market.sModeID;
     }
 
-    function _getEffectedEMode(
+    function _getEffectedSMode(
         address _iToken,
         address _account
-    ) internal view returns (uint8 _eModeID) {
-        uint8 _accountEMode = accountsEMode[_account];
-        _eModeID = _accountEMode == markets[_iToken].eModeID
-            ? _accountEMode
+    ) internal view returns (uint8 _sModeID) {
+        uint8 _accountSMode = accountsSMode[_account];
+        _sModeID = _accountSMode == markets[_iToken].sModeID
+            ? _accountSMode
             : 0;
     }
 
     /******** Setters *******/
 
-    function _setBorrowableInIsolationInternal(
+    function _setBorrowableInSegregationInternal(
         address _iToken,
         bool _borrowable
     ) internal {
         MarketV2 storage _market = markets[_iToken];
-        _market.borrowableInIsolation = _borrowable;
+        _market.borrowableInSegregation = _borrowable;
 
-        emit BorrowableInIsolationChanged(_iToken, _borrowable);
+        emit BorrowableInSegregationChanged(_iToken, _borrowable);
     }
 
     function _setDebtCeilingInternal(
@@ -188,66 +196,66 @@ abstract contract ControllerV2ExtraBase is
     }
 
     /**
-     * @dev Sets the eMode config for iToken
+     * @dev Sets the sMode config for iToken
      */
-    function _setEModeInternal(
+    function _setSModeInternal(
         address _iToken,
-        uint8 _newEModeID,
-        uint256 _eModeLtv,
-        uint256 _eModeLiqThreshold
+        uint8 _newSModeID,
+        uint256 _sModeLtv,
+        uint256 _sModeLiqThreshold
     ) internal {
-        _validateEModeID(_newEModeID, 1);
+        _validateSModeID(_newSModeID, 1);
 
         MarketV2 storage _market = markets[_iToken];
-        uint8 _oldEModeID = _market.eModeID;
+        uint8 _oldSModeID = _market.sModeID;
 
-        require(_oldEModeID == 0, "_setEMode: Has set eMode id!");
-        _validateEModeLTV(
+        require(_oldSModeID == 0, "_setSMode: Has set sMode id!");
+        _validateSModeLTV(
             _market.collateralFactorMantissa,
-            _eModeLiqThreshold,
-            _eModeLtv
+            _sModeLiqThreshold,
+            _sModeLtv
         );
-        _validateLiquidationThreshold(_eModeLtv, _eModeLiqThreshold);
+        _validateLiquidationThreshold(_sModeLtv, _sModeLiqThreshold);
 
-        _market.eModeID = _newEModeID;
+        _market.sModeID = _newSModeID;
 
-        uint256 _oldEModeLtv = marketCollateralFactor[_iToken][2];
-        marketCollateralFactor[_iToken][2] = _eModeLtv;
-        uint256 _oldEModeLiqThreshold = marketCollateralFactor[_iToken][3];
-        marketCollateralFactor[_iToken][3] = _eModeLiqThreshold;
+        uint256 _oldSModeLtv = marketCollateralFactor[_iToken][2];
+        marketCollateralFactor[_iToken][2] = _sModeLtv;
+        uint256 _oldSModeLiqThreshold = marketCollateralFactor[_iToken][3];
+        marketCollateralFactor[_iToken][3] = _sModeLiqThreshold;
 
-        emit EModeChanged(_iToken, _oldEModeID, _newEModeID);
-        emit NewEModeLTV(_iToken, _oldEModeLtv, _eModeLtv);
-        emit NewEModeLiquidationThreshold(
+        emit SModeChanged(_iToken, _oldSModeID, _newSModeID);
+        emit NewSModeLTV(_iToken, _oldSModeLtv, _sModeLtv);
+        emit NewSModeLiquidationThreshold(
             _iToken,
-            _oldEModeLiqThreshold,
-            _eModeLiqThreshold
+            _oldSModeLiqThreshold,
+            _sModeLiqThreshold
         );
     }
 
-    function _addEModeInternal(
+    function _addSModeInternal(
         uint256 _liquidationIncentive,
         uint256 _closeFactor,
         string memory _label
     ) internal {
-        uint8 _eModesLen = uint8(eModes.length);
-        require(_eModesLen < MAX_EMODE_ID, "_addEMode: Max EMode reached!");
+        uint8 _sModesLen = uint8(sModes.length);
+        require(_sModesLen < MAX_SMODE_ID, "_addSMode: Max SMode reached!");
 
-        // Check parameters in the eMode.
-        _validateEModeLiquidationIncentive(_liquidationIncentive);
-        _validateEModeCloseFactor(_closeFactor);
+        // Check parameters in the sMode.
+        _validateSModeLiquidationIncentive(_liquidationIncentive);
+        _validateSModeCloseFactor(_closeFactor);
 
-        eModes.push(
-            EModeConfig({
+        sModes.push(
+            SModeConfig({
                 liquidationIncentive: _liquidationIncentive,
                 closeFactor: _closeFactor,
                 label: _label
             })
         );
 
-        // Use the length of eModes as the new eMode id.
-        emit EModeAdded(
-            _eModesLen,
+        // Use the length of sModes as the new sMode id.
+        emit SModeAdded(
+            _sModesLen,
             _liquidationIncentive,
             _closeFactor,
             _label
@@ -255,14 +263,14 @@ abstract contract ControllerV2ExtraBase is
     }
 
     /**
-     * @notice Has already checked the parameter `_newEModeId`.
-     * @dev Update caller's eMode ID.
+     * @notice Has already checked the parameter `_newSModeId`.
+     * @dev Update caller's sMode ID.
      */
-    function _enterEMode(uint8 _newEModeId, address _account) internal {
-        uint8 _oldEModeID = accountsEMode[_account];
-        accountsEMode[_account] = _newEModeId;
+    function _enterSMode(uint8 _newSModeId, address _account) internal {
+        uint8 _oldSModeID = accountsSMode[_account];
+        accountsSMode[_account] = _newSModeId;
 
-        emit EModeEntered(_oldEModeID, _newEModeId, _account);
+        emit SModeEntered(_oldSModeID, _newSModeId, _account);
     }
 
     /*********************************/
@@ -281,7 +289,7 @@ abstract contract ControllerV2ExtraBase is
         _len = _accountData.collaterals.length();
     }
 
-    function getIsolationModeState(
+    function getSegregationModeState(
         address _account
     ) public view override returns (bool, address) {
         AccountData storage _accountData = accountsData[_account];
@@ -303,8 +311,8 @@ abstract contract ControllerV2ExtraBase is
         address _iToken,
         address _account
     ) public view override returns (uint256 _liquidationIncentive) {
-        uint8 effectedEMode = _getEffectedEMode(_iToken, _account);
+        uint8 effectedSMode = _getEffectedSMode(_iToken, _account);
 
-        _liquidationIncentive = eModes[effectedEMode].liquidationIncentive;
+        _liquidationIncentive = sModes[effectedSMode].liquidationIncentive;
     }
 }

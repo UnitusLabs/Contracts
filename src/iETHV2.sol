@@ -164,7 +164,7 @@ contract iETHV2 is iETH {
      */
     function redeemFromSelfAndExitMarket(
         uint256 _redeemiToken
-    ) external nonReentrant settleInterest {
+    ) public nonReentrant settleInterest {
         _redeemInternal(
             msg.sender,
             _redeemiToken,

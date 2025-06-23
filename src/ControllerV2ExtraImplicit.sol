@@ -98,62 +98,62 @@ contract ControllerV2ExtraImplicit is
         emit NewTimeLockStrategy(_oldTimeLockStrategy, _newTimeLockStrategy);
     }
 
-    /******** EMode Operations *******/
+    /******** SMode Operations *******/
 
     /**
-     * @dev Add new eMode config
-     * @param _liquidationIncentive the liquidation incentive of iToken in eMode
-     * @param _closeFactor the close factor of iToken in eMode
-     * @param _label the label of iToken in eMode
+     * @dev Add new sMode config
+     * @param _liquidationIncentive the liquidation incentive of iToken in sMode
+     * @param _closeFactor the close factor of iToken in sMode
+     * @param _label the label of iToken in sMode
      */
-    function _addEMode(
+    function _addSMode(
         uint256 _liquidationIncentive,
         uint256 _closeFactor,
         string memory _label
     ) external override onlyOwner {
-        _addEModeInternal(_liquidationIncentive, _closeFactor, _label);
+        _addSModeInternal(_liquidationIncentive, _closeFactor, _label);
     }
 
-    // Update `_liquidationIncentive` in the eMode
-    function _setEModeLiquidationIncentive(
-        uint8 _eModeID,
+    // Update `_liquidationIncentive` in the sMode
+    function _setSModeLiquidationIncentive(
+        uint8 _sModeID,
         uint256 _liquidationIncentive
     ) external override onlyOwner {
-        // Should use `_setLiquidationIncentive` to set the emode 0
-        _validateEModeID(_eModeID, 1);
-        _validateEModeLiquidationIncentive(_liquidationIncentive);
+        // Should use `_setLiquidationIncentive` to set the sMode 0
+        _validateSModeID(_sModeID, 1);
+        _validateSModeLiquidationIncentive(_liquidationIncentive);
 
-        uint256 _oldEModeLiquidationIncentive = eModes[_eModeID]
+        uint256 _oldSModeLiquidationIncentive = sModes[_sModeID]
             .liquidationIncentive;
-        eModes[_eModeID].liquidationIncentive = _liquidationIncentive;
+        sModes[_sModeID].liquidationIncentive = _liquidationIncentive;
 
-        emit NewEModeLiquidationIncentive(
-            _eModeID,
-            _oldEModeLiquidationIncentive,
+        emit NewSModeLiquidationIncentive(
+            _sModeID,
+            _oldSModeLiquidationIncentive,
             _liquidationIncentive
         );
     }
 
-    // Update `_closeFactor` in the eMode
-    function _setEModeCloseFactor(
-        uint8 _eModeID,
+    // Update `_closeFactor` in the sMode
+    function _setSModeCloseFactor(
+        uint8 _sModeID,
         uint256 _closeFactor
     ) external override onlyOwner {
-        // Should use `_setCloseFactor` to set the emode 0
-        _validateEModeID(_eModeID, 1);
-        _validateEModeCloseFactor(_closeFactor);
+        // Should use `_setCloseFactor` to set the sMode 0
+        _validateSModeID(_sModeID, 1);
+        _validateSModeCloseFactor(_closeFactor);
 
-        uint256 _oldEModeCloseFactor = eModes[_eModeID].closeFactor;
-        eModes[_eModeID].closeFactor = _closeFactor;
+        uint256 _oldSModeCloseFactor = sModes[_sModeID].closeFactor;
+        sModes[_sModeID].closeFactor = _closeFactor;
 
-        emit NewEModeCloseFactor(_eModeID, _oldEModeCloseFactor, _closeFactor);
+        emit NewSModeCloseFactor(_sModeID, _oldSModeCloseFactor, _closeFactor);
     }
 
     /******** Market Operations *******/
 
     /**
      * @notice Should use `DEBT_CEILING_DECIMALS` at the same time.
-     * @dev Sets the debt ceiling in isolation mode for the _iToken
+     * @dev Sets the debt ceiling in segregation mode for the _iToken
      * @param _iToken The _iToken to set debt ceiling
      * @param _newDebtCeiling The new debt ceiling for the _iToken
      */
@@ -165,49 +165,49 @@ contract ControllerV2ExtraImplicit is
 
         MarketV2 storage _market = markets[_iToken];
         uint256 _oldDebtCeiling = _market.debtCeiling;
-        // non-isolated market can not be changed to isolated
+        // non-segregated market can not be changed to segregated
         require(
             _oldDebtCeiling != 0,
-            "_setDebtCeiling: can not change to isolated!"
+            "_setDebtCeiling: can not change to segregated!"
         );
 
         _setDebtCeilingInternal(_iToken, _newDebtCeiling);
     }
 
     /**
-     * @notice Only assets of the same family (eg USD stablecoins) should be borrowable in isolation mode to keep
+     * @notice Only assets of the same family (eg USD stablecoins) should be borrowable in segregation mode to keep
      * consistency in the debt ceiling calculations
-     * @dev When the flag _borrowable is true, it means that the _iToken can be borrowed against isolated collaterals,
-     * and the amount borrowed will be added to the total debt exposure of the isolated collateral
-     * @param _iToken The _iToken to set in isolation mode
-     * @param _borrowable True if the _iToken is borrowable in isolation mode
+     * @dev When the flag _borrowable is true, it means that the _iToken can be borrowed against segregated collaterals,
+     * and the amount borrowed will be added to the total debt exposure of the segregated collateral
+     * @param _iToken The _iToken to set in segregation mode
+     * @param _borrowable True if the _iToken is borrowable in segregation mode
      */
-    function _setBorrowableInIsolation(
+    function _setBorrowableInSegregation(
         address _iToken,
         bool _borrowable
     ) external override onlyOwner {
         _checkiTokenListed(_iToken);
 
-        _setBorrowableInIsolationInternal(_iToken, _borrowable);
+        _setBorrowableInSegregationInternal(_iToken, _borrowable);
     }
 
     /**
      * @notice In V1, collateral factor of the iToken has been set.
-     * @dev Only for setting the eMode config for iTokens in V1.
-     * @param _iToken The _iToken will be added to eMode
-     * @param _eModeID The _eModeID to which _iToken belongs
-     * @param _eModeLtv The collateral factor of _iToken in the eMode
-     * @param _eModeLiqThreshold The liquidation threshold of _iToken in the eMode
+     * @dev Only for setting the sMode config for iTokens in V1.
+     * @param _iToken The _iToken will be added to sMode
+     * @param _sModeID The _sModeID to which _iToken belongs
+     * @param _sModeLtv The collateral factor of _iToken in the sMode
+     * @param _sModeLiqThreshold The liquidation threshold of _iToken in the sMode
      */
-    function _setEMode(
+    function _setSMode(
         address _iToken,
-        uint8 _eModeID,
-        uint256 _eModeLtv,
-        uint256 _eModeLiqThreshold
+        uint8 _sModeID,
+        uint256 _sModeLtv,
+        uint256 _sModeLiqThreshold
     ) external override onlyOwner {
         _checkiTokenListed(_iToken);
 
-        _setEModeInternal(_iToken, _eModeID, _eModeLtv, _eModeLiqThreshold);
+        _setSModeInternal(_iToken, _sModeID, _sModeLtv, _sModeLiqThreshold);
     }
 
     /**
@@ -235,53 +235,53 @@ contract ControllerV2ExtraImplicit is
         );
     }
 
-    // Update `_ltv` in the eMode
-    function _setEModeLTV(
+    // Update `_ltv` in the sMode
+    function _setSModeLTV(
         address _iToken,
         uint256 _ltv
     ) external override onlyOwner {
         _checkiTokenListed(_iToken);
 
         require(
-            markets[_iToken].eModeID > 0,
-            "_setEModeLTV: has not set eMode!"
+            markets[_iToken].sModeID > 0,
+            "_setSModeLTV: has not set sMode!"
         );
 
-        _validateEModeLTV(
+        _validateSModeLTV(
             marketCollateralFactor[_iToken][0], // collateral factor
-            marketCollateralFactor[_iToken][3], // emode liquidation threshold
+            marketCollateralFactor[_iToken][3], // sMode liquidation threshold
             _ltv
         );
 
-        uint256 _oldEModeLTV = marketCollateralFactor[_iToken][2];
+        uint256 _oldSModeLTV = marketCollateralFactor[_iToken][2];
         marketCollateralFactor[_iToken][2] = _ltv;
 
-        emit NewEModeLTV(_iToken, _oldEModeLTV, _ltv);
+        emit NewSModeLTV(_iToken, _oldSModeLTV, _ltv);
     }
 
-    // Update `_liquidationThreshold` in the eMode
-    function _setEModeLiquidationThreshold(
+    // Update `_liquidationThreshold` in the sMode
+    function _setSModeLiquidationThreshold(
         address _iToken,
         uint256 _liquidationThreshold
     ) external override onlyOwner {
         _checkiTokenListed(_iToken);
         require(
-            markets[_iToken].eModeID > 0,
-            "_setEModeLiquidationThreshold: has not set eMode!"
+            markets[_iToken].sModeID > 0,
+            "_setSModeLiquidationThreshold: has not set sMode!"
         );
         _validateLiquidationThreshold(
-            marketCollateralFactor[_iToken][2], // eModeLtv
+            marketCollateralFactor[_iToken][2], // sModeLtv
             _liquidationThreshold
         );
 
-        uint256 _oldEModeLiquidationThreshold = marketCollateralFactor[_iToken][
+        uint256 _oldSModeLiquidationThreshold = marketCollateralFactor[_iToken][
             3
         ];
         marketCollateralFactor[_iToken][3] = _liquidationThreshold;
 
-        emit NewEModeLiquidationThreshold(
+        emit NewSModeLiquidationThreshold(
             _iToken,
-            _oldEModeLiquidationThreshold,
+            _oldSModeLiquidationThreshold,
             _liquidationThreshold
         );
     }
@@ -344,8 +344,8 @@ contract ControllerV2ExtraImplicit is
         uint256 borrowValue;
         bool isPriceValid;
         uint256 collateralFactor;
-        uint8 accountEModeID;
-        uint8 iTokenEModeID;
+        uint8 accountSModeID;
+        uint8 iTokenSModeID;
     }
 
     /**
@@ -367,7 +367,7 @@ contract ControllerV2ExtraImplicit is
         AccountEquityLocalVars memory _local;
         AccountData storage _accountData = accountsData[_account];
 
-        _local.accountEModeID = accountsEMode[_account];
+        _local.accountSModeID = accountsSMode[_account];
 
         // Calculate value of all collaterals
         // collateralValuePerToken = underlyingPrice * exchangeRate * collateralFactor
@@ -377,11 +377,11 @@ contract ControllerV2ExtraImplicit is
         for (uint256 i = 0; i < _len; i++) {
             IiToken _token = IiToken(_accountData.collaterals.at(i));
 
-            _local.iTokenEModeID = _getiTokenEModeID(address(_token));
+            _local.iTokenSModeID = _getiTokenSModeID(address(_token));
             _local.collateralFactor = getCollateralFactor(
                 address(_token),
-                _local.accountEModeID,
-                _local.iTokenEModeID,
+                _local.accountSModeID,
+                _local.iTokenSModeID,
                 _isLiquidation
             );
 
@@ -517,38 +517,38 @@ contract ControllerV2ExtraImplicit is
     /*********************************/
 
     /**
-     * @dev Updates eMode ID for the caller.
-     * @param _newEModeId new eMode ID user wants to enter.
+     * @dev Updates sMode ID for the caller.
+     * @param _newSModeId new sMode ID user wants to enter.
      */
-    function enterEMode(uint8 _newEModeId) external override {
-        // Check eMode id.
-        _validateEModeID(_newEModeId, 0);
+    function enterSMode(uint8 _newSModeId) external override {
+        // Check sMode id.
+        _validateSModeID(_newSModeId, 0);
 
         AccountData storage _accountData = accountsData[msg.sender];
         // Length of all the borrowed assets.
         uint256 _len = _accountData.borrowed.length();
 
-        // If users do not borrow any assets, can set eMode ID directly.
+        // If users do not borrow any assets, can set sMode ID directly.
         if (_len == 0) {
-            _enterEMode(_newEModeId, msg.sender);
+            _enterSMode(_newSModeId, msg.sender);
             return;
         }
 
-        if (_newEModeId != 0) {
-            // If users have borrowed some assets, all borrowed assets should belong to the new eMode ID.
+        if (_newSModeId != 0) {
+            // If users have borrowed some assets, all borrowed assets should belong to the new sMode ID.
             for (uint256 i = 0; i < _len; i++) {
                 address _borrowedAsset = _accountData.borrowed.at(i);
-                uint8 _borrowedAssetEModeID = _getiTokenEModeID(_borrowedAsset);
+                uint8 _borrowedAssetSModeID = _getiTokenSModeID(_borrowedAsset);
                 require(
-                    _borrowedAssetEModeID == _newEModeId,
-                    "enterEMode: has borrowed asset of other eMode!"
+                    _borrowedAssetSModeID == _newSModeId,
+                    "enterSMode: has borrowed asset of other sMode!"
                 );
             }
         }
 
-        _enterEMode(_newEModeId, msg.sender);
+        _enterSMode(_newSModeId, msg.sender);
 
-        // Calculate new equity with the new eMode config.
+        // Calculate new equity with the new sMode config.
         // TODO: Maybe should update interest at first.
         (, uint256 _shortfall, , ) = calcAccountEquityWithEffectV2(
             msg.sender, // _account
@@ -558,7 +558,7 @@ contract ControllerV2ExtraImplicit is
             false // _isLiquidation
         );
 
-        require(_shortfall == 0, "enterEMode: Do not have enough equity!");
+        require(_shortfall == 0, "enterSMode: Do not have enough equity!");
     }
 
     /*********************************/
@@ -570,11 +570,11 @@ contract ControllerV2ExtraImplicit is
      */
     function getCollateralFactor(
         address _iToken,
-        uint8 _accountEModeID,
-        uint8 _iTokenEModeID,
+        uint8 _accountSModeID,
+        uint8 _iTokenSModeID,
         bool _isLiquidation
     ) public view override returns (uint256 _collateralFactor) {
-        // if ((_accountEModeID == _iTokenEModeID) && _iTokenEModeID > 0) {
+        // if ((_accountSModeID == _iTokenSModeID) && _iTokenSModeID > 0) {
         //     _collateralFactor = _isLiquidation
         //         ? marketCollateralFactor[_iToken][3]
         //         : marketCollateralFactor[_iToken][2];
@@ -586,14 +586,14 @@ contract ControllerV2ExtraImplicit is
 
         uint256 _index;
         assembly {
-            // isEMode = (_accountEModeID == _iTokenEModeID) && _iTokenEModeID > 0
-            // isEMode << 1 | _isLiquidation
+            // isSMode = (_accountSModeID == _iTokenSModeID) && _iTokenSModeID > 0
+            // isSMode << 1 | _isLiquidation
             _index := or(
                 shl(
                     1,
                     and(
-                        eq(_accountEModeID, _iTokenEModeID),
-                        gt(_iTokenEModeID, 0)
+                        eq(_accountSModeID, _iTokenSModeID),
+                        gt(_iTokenSModeID, 0)
                     )
                 ),
                 _isLiquidation
@@ -603,10 +603,10 @@ contract ControllerV2ExtraImplicit is
     }
 
     /**
-     * @dev Get the length of all the eMode configs.
+     * @dev Get the length of all the sMode configs.
      */
-    function getEModeLength() external view override returns (uint256) {
-        return eModes.length;
+    function getSModeLength() external view override returns (uint256) {
+        return sModes.length;
     }
 
     function marketsV2(
@@ -621,8 +621,8 @@ contract ControllerV2ExtraImplicit is
             mintPaused: market.mintPaused,
             redeemPaused: market.redeemPaused,
             borrowPaused: market.borrowPaused,
-            eModeID: market.eModeID,
-            borrowableInIsolation: market.borrowableInIsolation,
+            sModeID: market.sModeID,
+            borrowableInSegregation: market.borrowableInSegregation,
             debtCeiling: market.debtCeiling,
             currentDebt: market.currentDebt
         });
@@ -638,13 +638,13 @@ contract ControllerV2ExtraImplicit is
         return marketCollateralFactor[_iToken][1];
     }
 
-    function getEModeLTV(
+    function getSModeLTV(
         address _iToken
     ) external view override returns (uint256) {
         return marketCollateralFactor[_iToken][2];
     }
 
-    function getEModeLiquidationThreshold(
+    function getSModeLiquidationThreshold(
         address _iToken
     ) external view override returns (uint256) {
         return marketCollateralFactor[_iToken][3];

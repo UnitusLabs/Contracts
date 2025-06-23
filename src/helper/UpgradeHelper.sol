@@ -144,12 +144,19 @@ contract UpgradeHelper is Ownable {
     }
 
     function _upgradeController() internal {
-        uint256 size = 3;
+        uint256 size = 4;
         address[] memory targets = new address[](size);
         uint256[] memory values = new uint256[](size);
         string[] memory signatures = new string[](size);
         bytes[] memory calldatas = new bytes[](size);
         uint256 i = 0;
+
+        // Pause the reward distribution and explicit unpause is needed
+        // IRewardDistributor(rewardDistributor).pause();
+        targets[i] = rewardDistributor;
+        values[i] = 0;
+        signatures[i] = "_pause()";
+        calldatas[i++] = "";
 
         // IProxyAdmin(proxyAdmin).upgrade(controller, controllerImpl);
         targets[i] = proxyAdmin;

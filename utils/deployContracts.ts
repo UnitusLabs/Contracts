@@ -2,7 +2,8 @@ import {DeployOptions} from "hardhat-deploy/dist/types";
 import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {Interface, FunctionFragment, Fragment} from "@ethersproject/abi";
 import * as readline from "readline/promises";
-import {BaseContractMethod} from "ethers";
+import {BaseContractMethod, ContractTransaction, Transaction} from "ethers";
+import {Timelock} from "../typechain-types";
 
 export async function deploy(
   hre: HardhatRuntimeEnvironment,
@@ -134,52 +135,66 @@ export async function execute(
 ) {
   const {deployments, ethers, getNamedAccounts} = hre;
   const {read, execute, log, catchUnknownSigner} = deployments;
-  const {deployer} = await getNamedAccounts();
+  const {owner} = await getNamedAccounts();
 
   log(`Going to call ${name}.${method}(${args})`);
 
   let result;
-  if (from === "owner") {
+
+  try {
     const targetOwner = await read(name, "owner");
-    const timelock = await deployments.get("timelock");
 
-    if (targetOwner === timelock.address) {
-      // execute via timelock
-      log("Executing via timelock...");
+    let targetContract = await ethers.getContract(name, targetOwner);
+    let tx = (await targetContract[method].populateTransaction(
+      ...args
+    )) as ContractTransaction;
 
-      const timelockOwner = await read("timelock", "owner");
-      const target = await ethers.getContract(name, deployer);
+    if (from === "owner") {
+      const timelock = await deployments.get("timelock");
 
-      const tx = await target[method].populateTransaction(...args);
-      const signature = target.interface.parseTransaction(tx)?.signature;
-      const calldata = "0x" + tx.data.substr(10);
+      if (targetOwner === timelock.address) {
+        // execute via timelock
+        log("Executing via timelock...");
 
-      // log(signature);
-      // log(calldata);
+        const timelockOwner = await read("timelock", "owner");
+        const signature =
+          targetContract.interface.parseTransaction(tx)?.signature;
+        const calldata = "0x" + tx.data.substr(10);
 
-      result = await catchUnknownSigner(
-        execute(
+        const timelockContract = (await ethers.getContract(
           "timelock",
-          {from: timelockOwner, log: true},
-          "executeTransaction",
-          target.target,
+          timelockOwner
+        )) as Timelock;
+
+        tx = (await timelockContract.executeTransaction.populateTransaction(
+          targetContract.target,
           0,
           signature,
           calldata
-        )
-      );
-    } else {
-      // execute from targetOwner
-      result = await catchUnknownSigner(
-        execute(name, {from: targetOwner, log: true}, method, ...args)
-      );
+        )) as ContractTransaction;
+
+        name = "timelock";
+        from = timelockOwner;
+        method = "executeTransaction";
+        args = [targetContract.target, 0, signature, calldata];
+      } else {
+        log("impersonating target owner...");
+
+        from = targetOwner;
+      }
     }
-  } else {
-    // execute from original from
-    result = await catchUnknownSigner(
-      execute(name, {from: from, log: true}, method, ...args)
-    );
+
+    // Print tx data for multisig
+    if (from === owner) {
+      log("txData:", tx);
+    }
+  } catch (error) {
+    console.error(error);
   }
+
+  result = await catchUnknownSigner(
+    execute(name, {from: from, log: true}, method, ...args)
+  );
 
   // We have a UnknownSigner exception
   if (result) {
@@ -235,4 +250,10 @@ async function waitForContinue() {
   } finally {
     rl.close();
   }
+}
+export async function getOwner(hre: HardhatRuntimeEnvironment, name: string) {
+  const {deployments, ethers, getNamedAccounts} = hre;
+  const {read, execute, log, catchUnknownSigner} = deployments;
+
+  return await read(name, "owner");
 }

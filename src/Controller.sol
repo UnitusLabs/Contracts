@@ -520,7 +520,7 @@ contract Controller is
      */
     function _setRewardDistributor(
         address _newRewardDistributor
-    ) external override onlyOwner {
+    ) external virtual override onlyOwner {
         address _oldRewardDistributor = rewardDistributor;
 
         require(
@@ -593,7 +593,7 @@ contract Controller is
         address _minter,
         uint256 _mintAmount,
         uint256 _mintedAmount
-    ) external override {
+    ) public virtual override {
         _iToken;
         _minter;
         _mintAmount;
@@ -644,7 +644,7 @@ contract Controller is
         address _redeemer,
         uint256 _redeemAmount,
         uint256 _redeemedUnderlying
-    ) external virtual override {
+    ) public virtual override {
         _iToken;
         _redeemer;
         _redeemAmount;
@@ -718,7 +718,7 @@ contract Controller is
         address _iToken,
         address _borrower,
         uint256 _borrowedAmount
-    ) external virtual override {
+    ) public virtual override {
         _iToken;
         _borrower;
         _borrowedAmount;
@@ -841,7 +841,7 @@ contract Controller is
         address _borrower,
         uint256 _repaidAmount,
         uint256 _seizedAmount
-    ) external override {
+    ) public virtual override {
         _iTokenBorrowed;
         _iTokenCollateral;
         _liquidator;
@@ -922,7 +922,7 @@ contract Controller is
         address _liquidator,
         address _borrower,
         uint256 _seizedAmount
-    ) external override {
+    ) public virtual override {
         _iTokenBorrowed;
         _iTokenCollateral;
         _liquidator;
@@ -944,7 +944,7 @@ contract Controller is
         address _from,
         address _to,
         uint256 _amount
-    ) external override {
+    ) public override {
         // _redeemAllowed below will check whether _iToken is listed
 
         require(!transferPaused, "Transfer has been paused");
@@ -980,7 +980,7 @@ contract Controller is
         address _from,
         address _to,
         uint256 _amount
-    ) external override {
+    ) public virtual override {
         _iToken;
         _from;
         _to;
@@ -999,7 +999,7 @@ contract Controller is
         address _iToken,
         address _to,
         uint256 _amount
-    ) external override {
+    ) public override {
         // Flashloan share the same pause state with borrow
         require(!markets[_iToken].borrowPaused, "Token borrow has been paused");
 
@@ -1026,7 +1026,7 @@ contract Controller is
         address _iToken,
         address _to,
         uint256 _amount
-    ) external override {
+    ) public virtual override {
         _iToken;
         _to;
         _amount;

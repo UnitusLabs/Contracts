@@ -20,6 +20,18 @@ contract iTokenAggregatorModel is AggregatorModelV2 {
         return block.number;
     }
 
+    function _getAccrualInterestUnit(
+        IiToken _iToken
+    ) internal view virtual returns (uint256) {
+        return _iToken.accrualBlockNumber();
+    }
+
+    function _getBorrowRatePerUnit(
+        IiToken _iToken
+    ) internal view virtual returns (uint256) {
+        return _iToken.borrowRatePerBlock();
+    }
+
     struct InterestLocalVars {
         uint256 currentInterestUnit;
         uint256 accrualInterestUnit;
@@ -46,10 +58,9 @@ contract iTokenAggregatorModel is AggregatorModelV2 {
         _vars.totalReserves = _iToken.totalReserves();
 
         _vars.currentInterestUnit = _getInterestUnit();
-        _vars.accrualInterestUnit = _iToken.getAccrualInterestUnit();
+        _vars.accrualInterestUnit = _getAccrualInterestUnit(_iToken);
         if (_vars.currentInterestUnit > _vars.accrualInterestUnit) {
-            _vars.interestAccumulated = _iToken
-                .borrowRatePerBlock()
+            _vars.interestAccumulated = _getBorrowRatePerUnit(_iToken)
                 .mul(_vars.currentInterestUnit - _vars.accrualInterestUnit)
                 .rmul(_vars.totalBorrows);
             _vars.totalBorrows = _vars.interestAccumulated.add(

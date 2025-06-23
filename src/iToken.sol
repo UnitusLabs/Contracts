@@ -89,7 +89,7 @@ contract iToken is Base {
     function mint(
         address _recipient,
         uint256 _mintAmount
-    ) external nonReentrant settleInterest {
+    ) public nonReentrant settleInterest {
         _mintInternal(_recipient, _mintAmount);
     }
 
@@ -100,7 +100,7 @@ contract iToken is Base {
      */
     function mintForSelfAndEnterMarket(
         uint256 _mintAmount
-    ) external nonReentrant settleInterest {
+    ) public nonReentrant settleInterest {
         _mintInternal(msg.sender, _mintAmount);
         controller.enterMarketFromiToken(address(this), msg.sender);
     }
@@ -113,7 +113,7 @@ contract iToken is Base {
     function redeem(
         address _from,
         uint256 _redeemiToken
-    ) external nonReentrant settleInterest {
+    ) public nonReentrant settleInterest {
         _redeemInternal(
             _from,
             _redeemiToken,
@@ -129,7 +129,7 @@ contract iToken is Base {
     function redeemUnderlying(
         address _from,
         uint256 _redeemUnderlying
-    ) external nonReentrant settleInterest {
+    ) public nonReentrant settleInterest {
         _redeemInternal(
             _from,
             _redeemUnderlying.rdivup(_exchangeRateInternal()),
@@ -141,9 +141,7 @@ contract iToken is Base {
      * @dev Caller borrows tokens from the protocol to their own address.
      * @param _borrowAmount The amount of the underlying token to borrow.
      */
-    function borrow(
-        uint256 _borrowAmount
-    ) external nonReentrant settleInterest {
+    function borrow(uint256 _borrowAmount) public nonReentrant settleInterest {
         _borrowInternal(msg.sender, _borrowAmount);
     }
 
@@ -153,7 +151,7 @@ contract iToken is Base {
      */
     function repayBorrow(
         uint256 _repayAmount
-    ) external nonReentrant settleInterest {
+    ) public nonReentrant settleInterest {
         _repayInternal(msg.sender, msg.sender, _repayAmount);
     }
 
@@ -165,7 +163,7 @@ contract iToken is Base {
     function repayBorrowBehalf(
         address _borrower,
         uint256 _repayAmount
-    ) external nonReentrant settleInterest {
+    ) public nonReentrant settleInterest {
         _repayInternal(msg.sender, _borrower, _repayAmount);
     }
 
@@ -179,7 +177,7 @@ contract iToken is Base {
         address _borrower,
         uint256 _repayAmount,
         address _assetCollateral
-    ) external nonReentrant settleInterest {
+    ) public nonReentrant settleInterest {
         _liquidateBorrowInternal(_borrower, _repayAmount, _assetCollateral);
     }
 

@@ -52,17 +52,17 @@ contract ControllerV2ExtraExplicit is
         uint256 _closeFactor = 0;
         string memory _label = "Default";
 
-        // Initialize the default eMode.
-        eModes.push(
-            EModeConfig({
+        // Initialize the default sMode.
+        sModes.push(
+            SModeConfig({
                 liquidationIncentive: _liquidationIncentive,
                 closeFactor: _closeFactor,
                 label: _label
             })
         );
 
-        // Use the length of eModes as the new eMode id.
-        emit EModeAdded(0, _liquidationIncentive, _closeFactor, _label);
+        // Use the length of sModes as the new sMode id.
+        emit SModeAdded(0, _liquidationIncentive, _closeFactor, _label);
     }
 
     /**
@@ -87,8 +87,8 @@ contract ControllerV2ExtraExplicit is
             IRewardDistributorSecondV3(rewardDistributor)._upgrade(_iToken);
         }
 
-        // Initialize the default eMode.
-        _addEModeInternal(
+        // Initialize the default sMode.
+        _addSModeInternal(
             liquidationIncentiveMantissa,
             closeFactorMantissa,
             "Default"
@@ -117,20 +117,20 @@ contract ControllerV2ExtraExplicit is
             _vars._liquidationThreshold
         );
 
-        if (_vars._eModeID != 0) {
-            // Set config for eMode
-            _setEModeInternal(
+        if (_vars._sModeID != 0) {
+            // Set config for sMode
+            _setSModeInternal(
                 _vars._iToken,
-                _vars._eModeID,
-                _vars._eModeLtv,
-                _vars._eModeLiqThreshold
+                _vars._sModeID,
+                _vars._sModeLtv,
+                _vars._sModeLiqThreshold
             );
         }
 
-        if (_vars._borrowableInIsolation) {
-            _setBorrowableInIsolationInternal(
+        if (_vars._borrowableInSegregation) {
+            _setBorrowableInSegregationInternal(
                 _vars._iToken,
-                _vars._borrowableInIsolation
+                _vars._borrowableInSegregation
             );
         }
 
@@ -140,21 +140,21 @@ contract ControllerV2ExtraExplicit is
     }
 
     /**
-     * @notice duplicates the global closeFactor into the emode 0
+     * @notice duplicates the global closeFactor into the sMode 0
      */
     function _setCloseFactor(
         uint256 _newCloseFactorMantissa
     ) external override {
-        eModes[0].closeFactor = _newCloseFactorMantissa;
+        sModes[0].closeFactor = _newCloseFactorMantissa;
     }
 
     /**
-     * @notice duplicates the global liquidation incentive into the emode 0
+     * @notice duplicates the global liquidation incentive into the sMode 0
      */
     function _setLiquidationIncentive(
         uint256 _newLiquidationIncentiveMantissa
     ) external override {
-        eModes[0].liquidationIncentive = _newLiquidationIncentiveMantissa;
+        sModes[0].liquidationIncentive = _newLiquidationIncentiveMantissa;
     }
 
     /******** Market Operations *******/
@@ -192,18 +192,18 @@ contract ControllerV2ExtraExplicit is
         MarketV2 storage market = markets[_iToken];
 
         (
-            bool _isInIsolationMode,
-            address _isolationModeCollateral
-        ) = getIsolationModeState(_borrower);
+            bool _isInSegregationMode,
+            address _segregationModeCollateral
+        ) = getSegregationModeState(_borrower);
 
-        if (_isInIsolationMode) {
+        if (_isInSegregationMode) {
             MarketV2 storage collateralMarket = markets[
-                _isolationModeCollateral
+                _segregationModeCollateral
             ];
 
             require(
-                market.borrowableInIsolation,
-                "beforeBorrow: Invalid to borrow in isolation mode!"
+                market.borrowableInSegregation,
+                "beforeBorrow: Invalid to borrow in segregation mode!"
             );
 
             uint256 _newDebt = collateralMarket.currentDebt.add(
@@ -214,7 +214,7 @@ contract ControllerV2ExtraExplicit is
 
             require(
                 _newDebt <= collateralMarket.debtCeiling,
-                "beforeBorrow: Isolation debt ceiling exceeded!"
+                "beforeBorrow: Segregation debt ceiling exceeded!"
             );
 
             // only update state when called by corresponding iToken
@@ -223,13 +223,13 @@ contract ControllerV2ExtraExplicit is
             }
         }
 
-        // Check eMode ID of the `_borrower` and `_iToken`
-        uint8 _borrowerEModeID = accountsEMode[_borrower];
-        uint8 _iTokenEModeID = _getiTokenEModeID(_iToken);
-        if (_borrowerEModeID != 0) {
+        // Check sMode ID of the `_borrower` and `_iToken`
+        uint8 _borrowerSModeID = accountsSMode[_borrower];
+        uint8 _iTokenSModeID = _getiTokenSModeID(_iToken);
+        if (_borrowerSModeID != 0) {
             require(
-                _iTokenEModeID == _borrowerEModeID,
-                "beforeBorrow: Inconsistent eMode ID"
+                _iTokenSModeID == _borrowerSModeID,
+                "beforeBorrow: Inconsistent sMode ID"
             );
         }
     }
@@ -252,13 +252,13 @@ contract ControllerV2ExtraExplicit is
         if (msg.sender != _iToken) return;
 
         (
-            bool _isInIsolationMode,
-            address _isolationModeCollateral
-        ) = getIsolationModeState(_borrower);
+            bool _isInSegregationMode,
+            address _segregationModeCollateral
+        ) = getSegregationModeState(_borrower);
 
-        if (_isInIsolationMode) {
+        if (_isInSegregationMode) {
             MarketV2 storage collateralMarket = markets[
-                _isolationModeCollateral
+                _segregationModeCollateral
             ];
 
             uint256 _currentDebt = collateralMarket.currentDebt;
@@ -281,8 +281,8 @@ contract ControllerV2ExtraExplicit is
     /**
      * @notice 1.1 If user does not have any collateral, enters market directly;
      *         1.2 If user has collaterals:
-     *             1.2.1 If user is in isolation mode, revert
-     *             1.2.2 If user is not in isolation mode:
+     *             1.2.1 If user is in segregation mode, revert
+     *             1.2.2 If user is not in segregation mode:
      *                  1.2.2.1 If _iToken does not have debt ceiling, enters market
      *                  1.2.2.1 If _iToken has debt ceiling, revert
      * @dev check should add _iToken to the account's markets list for equity calculations
@@ -296,11 +296,11 @@ contract ControllerV2ExtraExplicit is
         uint256 _enteredMarketsLength = getEnteredMarketsLength(_account);
 
         if (_enteredMarketsLength > 0) {
-            (bool _isInIsolationMode, ) = getIsolationModeState(_account);
+            (bool _isInSegregationMode, ) = getSegregationModeState(_account);
             MarketV2 storage market = markets[_iToken];
 
-            if (_isInIsolationMode || market.debtCeiling != 0) {
-                revert("_enterMarket: can only have one isolated collateral!");
+            if (_isInSegregationMode || market.debtCeiling != 0) {
+                revert("_enterMarket: can only have one segregated collateral!");
             }
         }
     }
@@ -309,8 +309,8 @@ contract ControllerV2ExtraExplicit is
         address _iToken,
         address _account
     ) external view override returns (uint256 _closeFactor) {
-        uint8 _effectedEMode = _getEffectedEMode(_iToken, _account);
+        uint8 _effectedSMode = _getEffectedSMode(_iToken, _account);
 
-        _closeFactor = eModes[_effectedEMode].closeFactor;
+        _closeFactor = sModes[_effectedSMode].closeFactor;
     }
 }

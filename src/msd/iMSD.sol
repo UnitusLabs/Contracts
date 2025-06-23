@@ -167,9 +167,7 @@ contract iMSD is Base {
      * @dev Caller borrows tokens from the protocol to their own address.
      * @param _borrowAmount The amount of the underlying token to borrow.
      */
-    function borrow(
-        uint256 _borrowAmount
-    ) external nonReentrant settleInterest {
+    function borrow(uint256 _borrowAmount) public nonReentrant settleInterest {
         _borrowInternal(msg.sender, _borrowAmount);
     }
 
@@ -179,7 +177,7 @@ contract iMSD is Base {
      */
     function repayBorrow(
         uint256 _repayAmount
-    ) external nonReentrant settleInterest {
+    ) public nonReentrant settleInterest {
         _repayInternal(msg.sender, msg.sender, _repayAmount);
     }
 
@@ -191,7 +189,7 @@ contract iMSD is Base {
     function repayBorrowBehalf(
         address _borrower,
         uint256 _repayAmount
-    ) external nonReentrant settleInterest {
+    ) public nonReentrant settleInterest {
         _repayInternal(msg.sender, _borrower, _repayAmount);
     }
 
@@ -205,7 +203,7 @@ contract iMSD is Base {
         address _borrower,
         uint256 _repayAmount,
         address _assetCollateral
-    ) external nonReentrant settleInterest {
+    ) public nonReentrant settleInterest {
         // Liquidate and seize the same token will call _seizeInternal() instead of seize()
         require(
             _assetCollateral != address(this),

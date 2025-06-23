@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/EnumerableSetUpgradeable.sol";
 
 import "./interface/IDefaultTimeLock.sol";
 import "./library/Ownable.sol";
@@ -21,6 +22,7 @@ contract DefaultTimeLock is
     IDefaultTimeLock
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
+    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
 
     mapping(uint256 => Agreement) private agreements;
 
@@ -28,6 +30,7 @@ contract DefaultTimeLock is
     bool public frozen;
 
     address public override controller;
+    mapping(address => EnumerableSetUpgradeable.UintSet) private userAgreementIds;
 
     constructor(address _controller) public {
         initialize(_controller);
@@ -55,7 +58,7 @@ contract DefaultTimeLock is
         require(_beneficiary != address(0), "Beneficiary cant be zero address");
         require(_releaseTime > block.timestamp, "Release time not valid");
 
-        agreementId = agreementCount++;
+        agreementId = ++agreementCount;
         agreements[agreementId] = Agreement({
             asset: _asset,
             tokenAmounts: _tokenAmounts,
@@ -63,6 +66,8 @@ contract DefaultTimeLock is
             releaseTime: _releaseTime,
             isFrozen: false
         });
+
+        require(userAgreementIds[_beneficiary].add(agreementId), "Agreement already exists");
 
         emit AgreementCreated(
             agreementId,
@@ -83,6 +88,7 @@ contract DefaultTimeLock is
         );
         require(!agreement.isFrozen, "Agreement frozen");
         delete agreements[agreementId];
+        require(userAgreementIds[agreement.beneficiary].remove(agreementId), "Agreement not found");
 
         emit AgreementClaimed(
             agreementId,
@@ -174,5 +180,15 @@ contract DefaultTimeLock is
         uint256 agreementId
     ) external view returns (Agreement memory agreement) {
         agreement = agreements[agreementId];
+    }
+
+    function getAgreementIds(
+        address _beneficiary
+    ) external view returns (uint256[] memory _allAgreementIds) {
+        uint256 _len = userAgreementIds[_beneficiary].length();
+        _allAgreementIds = new uint256[](_len);
+        for (uint256 i; i < _len; i++) {
+            _allAgreementIds[i] = userAgreementIds[_beneficiary].at(i);
+        }
     }
 }

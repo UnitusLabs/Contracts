@@ -128,6 +128,13 @@ contract StablePrimaryInterestSecondModel is InterestRateSecondModelV2 {
     {}
 }
 
+contract StablePrimaryInterestSecondModelV1 is InterestRateSecondModelV2 {
+    constructor()
+        public
+        InterestRateSecondModelV2(0, 0.9e18, 0.09e18, 0.71e18)
+    {}
+}
+
 contract StableSecondaryInterestSecondModel is InterestRateSecondModelV2 {
     constructor() public InterestRateSecondModelV2(0, 0.8e18, 0.07e18, 1e18) {}
 }
@@ -159,4 +166,8 @@ contract ETHLikeInterestSecondModel is InterestRateSecondModelV2 {
         public
         InterestRateSecondModelV2(0, 0.7e18, 0.03e18, 0.25e18)
     {}
+}
+
+contract OffBoardingInterestSecondModel2 is InterestRateSecondModelV2 {
+    constructor() public InterestRateSecondModelV2(1e18, 0.01e18, 1e18, 3e18) {}
 }

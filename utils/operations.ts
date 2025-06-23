@@ -1,23 +1,45 @@
 import {HardhatRuntimeEnvironment} from "hardhat/types";
 import {getNetworkName} from "hardhat-deploy/dist/src/utils";
 import {deploy, updateValue, execute} from "./deployContracts";
-import {loadConfig} from "../configs/loader";
+import {loadConfig, Config} from "../configs/loader";
 import {Deployment} from "hardhat-deploy/types";
+import {ethers} from "hardhat";
 
-export async function addMarkets(hre: HardhatRuntimeEnvironment) {
+export type Pool = "lending" | "vault";
+
+const POOLS: Record<Pool, {controller: string; iTokenConfigs: string}> = {
+  lending: {
+    controller: "controller", // name of the controller instance
+    iTokenConfigs: "iTokenConfigs", // name of the iToken configs in the config
+  },
+  vault: {
+    controller: "vaultController", // name of the controller instance
+    iTokenConfigs: "vaultTokenConfigs", // name of the iToken configs in the config
+  },
+};
+
+export async function addMarkets(
+  hre: HardhatRuntimeEnvironment,
+  pool: Pool = "lending"
+) {
   const {deployments, getNamedAccounts, ethers} = hre;
   const {read, log} = deployments;
   const {owner} = await getNamedAccounts();
-  const {iTokenConfigs} = await loadConfig(getNetworkName(hre.network));
+
+  const iTokenConfigs = (await loadConfig(getNetworkName(hre.network)))[
+    POOLS[pool].iTokenConfigs as keyof Config
+  ] as Config["iTokenConfigs"];
+
+  const controller = POOLS[pool].controller;
 
   for (let iToken in iTokenConfigs) {
     const iTokenConfig = iTokenConfigs[iToken];
     const iTokenProxy = await deployments.get(iToken);
 
-    let hasiToken = await read("controller", "hasiToken", iTokenProxy.address);
+    let hasiToken = await read(controller, "hasiToken", iTokenProxy.address);
     if (!hasiToken) {
       log("Going to add market for ", iToken);
-      await execute(hre, "controller", "owner", "_addMarketV2", {
+      await execute(hre, controller, "owner", "_addMarketV2", {
         _iToken: iTokenProxy.address,
         _collateralFactor: ethers.parseEther(iTokenConfig.collateralFactor),
         _borrowFactor: ethers.parseEther(iTokenConfig.borrowFactor),
@@ -30,14 +52,14 @@ export async function addMarkets(hre: HardhatRuntimeEnvironment) {
           iTokenConfig.iTokenDecimals
         ),
         _distributionFactor: ethers.parseEther(iTokenConfig.distributionFactor),
-        _eModeID: iTokenConfig.eModeID,
-        _eModeLtv: ethers.parseEther(iTokenConfig.eModeLtv),
-        _eModeLiqThreshold: ethers.parseEther(iTokenConfig.eModeLiqThreshold),
+        _sModeID: iTokenConfig.sModeID,
+        _sModeLtv: ethers.parseEther(iTokenConfig.sModeLtv),
+        _sModeLiqThreshold: ethers.parseEther(iTokenConfig.sModeLiqThreshold),
         _liquidationThreshold: ethers.parseEther(
           iTokenConfig.liquidationThreshold
         ),
         _debtCeiling: ethers.parseUnits(iTokenConfig.debtCeiling, 0),
-        _borrowableInIsolation: iTokenConfig.borrowableInIsolation,
+        _borrowableInSegregation: iTokenConfig.borrowableInSegregation,
       });
 
       hasiToken = await read("controller", "hasiToken", iTokenProxy.address);
@@ -50,49 +72,128 @@ export async function addMarkets(hre: HardhatRuntimeEnvironment) {
 
 export async function setTimeLockStrategyData(hre: HardhatRuntimeEnvironment) {
   const {deployments, ethers, network} = hre;
+  const {read, log} = deployments;
 
-  // Sets limit configs for iToken
   const {iTokenConfigs, timeLockStrategyConfigs} = await loadConfig(
     getNetworkName(hre.network)
   );
 
+  // Should set limit config for all iTokens
   for (let iToken in iTokenConfigs) {
     const iTokenInstance = await deployments.get(iToken);
     const iTokenConfig = iTokenConfigs[iToken];
 
-    // NOTICE: Maybe it is no need to do the following actions.
-    deployments.log(
-      "Going to set",
-      iToken,
-      "limit configs in the time lock strategy",
-      "\n"
+    const currentConfig = await read(
+      "timeLockStrategy",
+      "assetLimitConfig",
+      iTokenInstance.address
     );
 
-    await execute(
-      hre,
-      "timeLockStrategy",
-      "owner",
-      "_setAssetLimitConfig",
-      iTokenInstance.address,
-      {
-        minSingleLimit: ethers.parseUnits(
-          timeLockStrategyConfigs[iToken].minSingleLimit,
-          iTokenConfig.iTokenDecimals
-        ),
-        midSingleLimit: ethers.parseUnits(
-          timeLockStrategyConfigs[iToken].midSingleLimit,
-          iTokenConfig.iTokenDecimals
-        ),
-        minDailyLimit: ethers.parseUnits(
-          timeLockStrategyConfigs[iToken].minDailyLimit,
-          iTokenConfig.iTokenDecimals
-        ),
-        midDailyLimit: ethers.parseUnits(
-          timeLockStrategyConfigs[iToken].midDailyLimit,
-          iTokenConfig.iTokenDecimals
-        ),
+    const config = {
+      minSingleLimit: ethers.parseUnits(
+        timeLockStrategyConfigs[iToken].minSingleLimit,
+        iTokenConfig.iTokenDecimals
+      ),
+      midSingleLimit: ethers.parseUnits(
+        timeLockStrategyConfigs[iToken].midSingleLimit,
+        iTokenConfig.iTokenDecimals
+      ),
+      minDailyLimit: ethers.parseUnits(
+        timeLockStrategyConfigs[iToken].minDailyLimit,
+        iTokenConfig.iTokenDecimals
+      ),
+      midDailyLimit: ethers.parseUnits(
+        timeLockStrategyConfigs[iToken].midDailyLimit,
+        iTokenConfig.iTokenDecimals
+      ),
+    };
+
+    // read of hardhat-deploy uses ethers v5, which returns BigNumer,
+    // while hardhat now use ethers v6, which is BigInt
+    // to use == instead of ===
+    if (
+      currentConfig.minSingleLimit != config.minSingleLimit ||
+      currentConfig.midSingleLimit != config.midSingleLimit ||
+      currentConfig.minDailyLimit != config.minDailyLimit ||
+      currentConfig.midDailyLimit != config.midDailyLimit
+    ) {
+      log(
+        "Config changes, going to set",
+        iToken,
+        "limit configs in the time lock strategy",
+        "\n"
+      );
+
+      await execute(
+        hre,
+        "timeLockStrategy",
+        "owner",
+        "_setAssetLimitConfig",
+        iTokenInstance.address,
+        config
+      );
+    }
+  }
+
+  // Optional if we have whitelist
+  if (timeLockStrategyConfigs.hasOwnProperty("whitelist")) {
+    for (const wlAccount in timeLockStrategyConfigs.whitelist) {
+      const wlConfig = timeLockStrategyConfigs.whitelist[wlAccount];
+      for (const iToken in wlConfig) {
+        const iTokenInstance = await deployments.get(iToken);
+        const iTokenConfig = iTokenConfigs[iToken];
+
+        const curConfig = await read(
+          "timeLockStrategy",
+          "whitelistExtra",
+          iTokenInstance.address,
+          wlAccount
+        );
+
+        const config = {
+          minSingleLimit: ethers.parseUnits(
+            wlConfig[iToken].minSingleLimit,
+            iTokenConfig.iTokenDecimals
+          ),
+          midSingleLimit: ethers.parseUnits(
+            wlConfig[iToken].midSingleLimit,
+            iTokenConfig.iTokenDecimals
+          ),
+          minDailyLimit: ethers.parseUnits(
+            wlConfig[iToken].minDailyLimit,
+            iTokenConfig.iTokenDecimals
+          ),
+          midDailyLimit: ethers.parseUnits(
+            wlConfig[iToken].midDailyLimit,
+            iTokenConfig.iTokenDecimals
+          ),
+        };
+
+        if (
+          curConfig.minSingleLimit != config.minSingleLimit ||
+          curConfig.midSingleLimit != config.midSingleLimit ||
+          curConfig.minDailyLimit != config.minDailyLimit ||
+          curConfig.midDailyLimit != config.midDailyLimit
+        ) {
+          log(
+            "Config changes, going to set",
+            iToken,
+            "whitelist extra configs in the time lock strategy",
+            "\n"
+          );
+
+          await execute(
+            hre,
+            "timeLockStrategy",
+            "owner",
+            "_setWhitelistExtraConfig",
+            iTokenInstance.address,
+            wlAccount,
+            config
+          );
+        }
       }
-    );
+    }
   }
 }
 
@@ -156,15 +257,20 @@ export async function transferOwnershipToTimelock(
   for (const contract in all) {
     // log(contract);
 
-    // Ignore _Impl/_Proxy and excludes
-    if (
-      contract.includes("_Impl") ||
-      contract.includes("_Proxy") ||
-      excludes.includes(contract)
-    )
-      continue;
-
     try {
+      // Ignore _Impl/_Proxy and excludes
+      if (
+        contract.includes("_Impl") ||
+        contract.includes("_Proxy") ||
+        excludes.includes(contract)
+      )
+        continue;
+
+      const owner = await read(contract, "owner");
+      if (owner === timelock.address) {
+        continue;
+      }
+
       await execute(
         contract,
         {from: from, log: true},
@@ -179,15 +285,9 @@ export async function transferOwnershipToTimelock(
         args: [],
       });
     } catch (e) {
-      // Ignore errors some contract does not have owner
-      if (
-        e instanceof Error &&
-        e.message.includes('No method named "_setPendingOwner"')
-      ) {
-        log('No method named "_setPendingOwner" in ', contract, "Skipping!");
+      if (e instanceof Error && e.message.includes("no method named")) {
+        log("Skipping", contract, ", Error:", e.message);
         continue;
-      } else {
-        throw e;
       }
     }
   }
@@ -266,14 +366,14 @@ export async function deployiToken(
 
   const interestModel = await deployments.get(config.interestModel);
 
-  if (config.contractName == "iETHV2") {
+  if (config.contractName.includes("iETHV2")) {
     initArgs = [
       config.iTokenName,
       config.iTokenSymbol,
       controller.address,
       interestModel.address,
     ];
-  } else if (config.contractName == "iTokenV2") {
+  } else if (config.contractName.includes("iTokenV2")) {
     initArgs = [
       config.iTokenUnderlyingAddress,
       config.iTokenName,
@@ -321,7 +421,7 @@ export async function deployiToken(
     await execute(
       hre,
       "msdController",
-      deployer,
+      "owner",
       "_addMSD",
       config.iTokenUnderlyingAddress,
       [iTokenContract.address],
@@ -337,7 +437,7 @@ export async function deployiToken(
     await updateValue(
       hre,
       "FixedInterestRateSecondModelV2",
-      deployer,
+      "owner",
       "borrowRatesPerSecond",
       [iTokenContract.address],
       toUpdateBorrowRate,
@@ -361,69 +461,75 @@ export async function deployiToken(
   }
 }
 
-export async function setupEModes(
+export async function setupSModes(
   hre: HardhatRuntimeEnvironment,
   owner: string,
-  eModeConfigs: any[]
+  sModeConfigs: any[]
 ) {
   const {deployments, ethers} = hre;
   const {read, log} = deployments;
 
-  let allEModeLength = Number(await read("controller", "getEModeLength"));
-  log("Current eMode length : ", allEModeLength);
-  for (let eModeIndex in eModeConfigs) {
-    const eModeConfig = eModeConfigs[eModeIndex];
-    let hasEMode = false;
-    for (let i = 0; i < allEModeLength; i++) {
-      const eModeDetails = await read("controller", "eModes", i);
-      if (eModeConfig.label == eModeDetails.label) {
-        hasEMode = true;
+  let allSModeLength = Number(await read("controller", "getSModeLength"));
+  log("Current sMode length : ", allSModeLength);
+  for (let sModeIndex in sModeConfigs) {
+    const sModeConfig = sModeConfigs[sModeIndex];
+    let hasSMode = false;
+    for (let i = 0; i < allSModeLength; i++) {
+      const sModeDetails = await read("controller", "sModes", i);
+      if (sModeConfig.label == sModeDetails.label) {
+        hasSMode = true;
 
         if (
-          eModeConfig.liquidationIncentive !== eModeDetails.liquidationIncentive
+          !sModeDetails.liquidationIncentive.eq(
+            ethers.parseEther(sModeConfig.liquidationIncentive)
+          )
         ) {
           await execute(
             hre,
             "controller",
             owner,
-            "_setEModeLiquidationIncentive",
+            "_setSModeLiquidationIncentive",
             i,
-            ethers.parseEther(eModeConfig.liquidationIncentive)
+            ethers.parseEther(sModeConfig.liquidationIncentive)
           );
         }
 
-        if (eModeConfig.closeFactor !== eModeDetails.closeFactor) {
+        if (
+          !sModeDetails.closeFactor.eq(
+            ethers.parseEther(sModeConfig.closeFactor)
+          )
+        ) {
           await execute(
             hre,
             "controller",
             owner,
-            "_setEModeCloseFactor",
+            "_setSModeCloseFactor",
             i,
-            ethers.parseEther(eModeConfig.closeFactor)
+            ethers.parseEther(sModeConfig.closeFactor)
           );
         }
         break;
       }
     }
 
-    if (!hasEMode) {
-      console.log("Going to add eMode ", eModeConfig.label);
+    if (!hasSMode) {
+      console.log("Going to add sMode ", sModeConfig.label);
       await execute(
         hre,
         "controller",
         owner,
-        "_addEMode",
-        ethers.parseEther(eModeConfig.liquidationIncentive),
-        ethers.parseEther(eModeConfig.closeFactor),
-        eModeConfig.label
+        "_addSMode",
+        ethers.parseEther(sModeConfig.liquidationIncentive),
+        ethers.parseEther(sModeConfig.closeFactor),
+        sModeConfig.label
       );
     }
   }
-  allEModeLength = Number(await read("controller", "getEModeLength"));
-  log("After contract eMode length is: ", allEModeLength, "\n");
+  allSModeLength = Number(await read("controller", "getSModeLength"));
+  log("After contract sMode length is: ", allSModeLength, "\n");
 }
 
-export async function setiTokenEMode(
+export async function updateiTokenConfig(
   hre: HardhatRuntimeEnvironment,
   owner: string,
   iTokenAddr: string,
@@ -432,20 +538,46 @@ export async function setiTokenEMode(
   const {deployments, ethers} = hre;
   const {read, log} = deployments;
 
-  const curEMode = (await read("controller", "marketsV2", iTokenAddr)).eModeID;
+  const marketV2 = await read("controller", "marketsV2", iTokenAddr);
 
-  log("current EMode", curEMode);
-
-  if (curEMode !== Number(iTokenConfig.eModeID)) {
+  // SMode
+  const curSMode = marketV2.sModeID;
+  log("current SMode", curSMode);
+  if (curSMode !== Number(iTokenConfig.sModeID)) {
     await execute(
       hre,
       "controller",
       owner,
-      "_setEMode",
+      "_setSMode",
       iTokenAddr,
-      iTokenConfig.eModeID,
-      ethers.parseEther(iTokenConfig.eModeLtv),
-      ethers.parseEther(iTokenConfig.eModeLiqThreshold)
+      iTokenConfig.sModeID,
+      ethers.parseEther(iTokenConfig.sModeLtv),
+      ethers.parseEther(iTokenConfig.sModeLiqThreshold)
     );
   }
+
+  // borrowable in segregation
+  const borrowableInSegregation = marketV2.borrowableInSegregation;
+  if (borrowableInSegregation !== iTokenConfig.borrowableInSegregation) {
+    await execute(
+      hre,
+      "controller",
+      owner,
+      "_setBorrowableInSegregation",
+      iTokenAddr,
+      iTokenConfig.borrowableInSegregation
+    );
+  }
+
+  // Liquidation Threshold
+  await updateValue(
+    hre,
+    "controller",
+    "owner",
+    "getLiquidationThreshold",
+    [iTokenAddr],
+    ethers.parseEther(iTokenConfig.liquidationThreshold),
+    "_setLiquidationThreshold",
+    [iTokenAddr]
+  );
 }
