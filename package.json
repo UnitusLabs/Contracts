@@ -49,6 +49,7 @@
     "deploy": "node ./_scripts.js deploy",
     "verify": "node ./_scripts.js verify",
     "export": "node ./_scripts.js export",
+    "monitor:unitus": "node monitor/server.mjs",
     "hardhat": "hardhat",
     "fork:execute": "node ./_scripts.js fork:run",
     "fork:deploy": "node ./_scripts.js fork:deploy",

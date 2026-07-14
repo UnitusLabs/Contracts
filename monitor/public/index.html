@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Unitus Ethereum Position Monitor</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <nav class="tabs" aria-label="Monitor sections">
+        <a class="active" href="/">Borrower Positions</a>
+        <a href="/markets.html">Markets</a>
+      </nav>
+      <header>
+        <div>
+          <h1>Unitus Ethereum Position Monitor</h1>
+          <p id="meta">Loading positions...</p>
+        </div>
+        <div class="actions">
+          <button id="refresh" type="button">Refresh Positions</button>
+          <button id="scan" type="button">Scan Logs + Refresh</button>
+        </div>
+      </header>
+
+      <section class="summary" aria-label="Summary">
+        <div><span>Positions</span><strong id="positionCount">-</strong></div>
+        <div><span>Borrowed</span><strong id="totalBorrowed">-</strong></div>
+        <div><span>Shortfall</span><strong id="totalShortfall">-</strong></div>
+        <div><span>Liquidatable</span><strong id="liquidatable">-</strong></div>
+        <div><span>Stale Local</span><strong id="staleLocal">-</strong></div>
+      </section>
+
+      <section class="filters" aria-label="Filters">
+        <label>
+          Borrowed value
+          <select id="borrowFilter">
+            <option value="0">> $0</option>
+            <option value="100">> $100</option>
+            <option value="1000">> $1,000</option>
+          </select>
+        </label>
+        <label>
+          Status
+          <select id="statusFilter">
+            <option value="all">All</option>
+            <option value="healthy">Healthy</option>
+            <option value="liquidatable">Liquidatable</option>
+          </select>
+        </label>
+        <label>
+          Search account
+          <input id="search" type="search" placeholder="0x..." />
+        </label>
+      </section>
+
+      <section class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Account</th>
+              <th>Status</th>
+              <th>Sim Equity</th>
+              <th>Sim Shortfall</th>
+              <th>Deposits</th>
+              <th>Borrows</th>
+            </tr>
+          </thead>
+          <tbody id="positions"></tbody>
+        </table>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

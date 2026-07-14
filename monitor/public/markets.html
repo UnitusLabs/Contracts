@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Unitus Markets Monitor</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="compactMarkets">
+    <main>
+      <nav class="tabs" aria-label="Monitor sections">
+        <a href="/">Borrower Positions</a>
+        <a class="active" href="/markets.html">Markets</a>
+      </nav>
+
+      <header>
+        <div>
+          <h1>Unitus Markets</h1>
+          <p id="marketMeta">Loading live market data...</p>
+        </div>
+        <div class="actions">
+          <button id="marketRefresh" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <section class="summary summaryFour" aria-label="Market summary">
+        <div><span>Chains online</span><strong id="chainCount">-</strong></div>
+        <div><span>Markets</span><strong id="marketCount">-</strong></div>
+        <div><span>Supplied value</span><strong id="suppliedValue">-</strong></div>
+        <div><span>Borrowed value</span><strong id="borrowedValue">-</strong></div>
+      </section>
+
+      <section
+        id="chainBreakdown"
+        class="chainBreakdown"
+        aria-label="Supplied and borrowed value by chain"
+      ></section>
+
+      <section id="chainErrors" class="chainErrors" hidden></section>
+
+      <section class="filters" aria-label="Market filters">
+        <fieldset class="chainSelector">
+          <legend>Chains</legend>
+          <div id="chainToggles" class="chainToggles"></div>
+          <div class="chainToggleActions">
+            <button id="selectAllChains" type="button">All</button>
+            <button id="selectNoChains" type="button">None</button>
+          </div>
+        </fieldset>
+        <label>
+          Status
+          <select id="marketStatusFilter">
+            <option value="all">All statuses</option>
+            <option value="active">Active</option>
+            <option value="paused">Paused</option>
+            <option value="priceIssue">Price issue</option>
+            <option value="supplyZero">Supply = 0</option>
+            <option value="borrowZero">Borrow = 0</option>
+            <option value="supplyBorrowZero">Supply &amp; borrow = 0</option>
+            <option value="supplyCapZero">Supply cap = 0</option>
+            <option value="borrowCapZero">Borrow cap = 0</option>
+            <option value="supplyBorrowCapsZero">
+              Supply &amp; borrow caps = 0
+            </option>
+          </select>
+        </label>
+        <label>
+          Search asset or address
+          <input id="marketSearch" type="search" placeholder="USDC or 0x..." />
+        </label>
+      </section>
+
+      <section class="tableWrap marketTableWrap">
+        <table class="marketTable">
+          <thead>
+            <tr>
+              <th>Chain</th>
+              <th>Asset</th>
+              <th>Price</th>
+              <th>Supply</th>
+              <th>Borrow / liquidity</th>
+              <th>Risk</th>
+              <th>Caps</th>
+              <th>Status</th>
+              <th>sMode</th>
+              <th><span class="srOnly">Details</span></th>
+            </tr>
+          </thead>
+          <tbody id="marketRows"></tbody>
+        </table>
+      </section>
+    </main>
+    <script src="/markets.js"></script>
+  </body>
+</html>
