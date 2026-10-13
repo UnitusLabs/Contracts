@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="32px" height="32px" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Conflux</title>
+    <defs>
+        <linearGradient x1="20.3440849%" y1="9.84821358%" x2="76.9066413%" y2="91.986428%" id="linearGradient-1">
+            <stop stop-color="#2E49BC" offset="0%"></stop>
+            <stop stop-color="#12D778" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Network" transform="translate(-2721.000000, -1018.000000)">
+            <g id="Conflux" transform="translate(2721.000000, 1018.000000)">
+                <circle id="椭圆形" fill="url(#linearGradient-1)" transform="translate(16.000000, 16.000000) rotate(-360.000000) translate(-16.000000, -16.000000) " cx="16" cy="16" r="16"></circle>
+                <path d="M16.1183484,13.386546 L18.2119226,15.4927769 L13.504671,20.2284827 L16.1243871,22.8639684 L20.8316387,18.1284167 L22.9230452,20.2321816 L16.0996129,27.0967742 L9.29480774,20.2511386 L16.1183484,13.386546 Z M16.1415742,4.90322581 L25.0322581,13.8478331 L25.0175484,18.1302662 L16.1037935,9.162556 L7.25423484,18.0652267 L7.22580645,13.8728009 L16.1415742,4.90322581 Z" id="形状结合" fill="#FFFFFF" fill-rule="nonzero"></path>
+            </g>
+        </g>
+    </g>
+</svg>
