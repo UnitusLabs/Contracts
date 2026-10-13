@@ -1,14 +1,18 @@
+import "dotenv/config";
 import {ethers} from "ethers";
 
-const INFURA_KEY =
-  process.env.INFURA_KEY || "fc8ba3f3b8294917b0bfb6a37d711d4d";
+const INFURA_KEY = process.env.INFURA_KEY;
+
+function infuraRpc(network) {
+  return INFURA_KEY ? `https://${network}.infura.io/v3/${INFURA_KEY}` : null;
+}
 
 const CHAINS = [
   {
     id: 1,
     key: "ethereum",
     name: "Ethereum",
-    rpc: process.env.ETH_RPC_URL || `https://mainnet.infura.io/v3/${INFURA_KEY}`,
+    rpc: process.env.ETH_RPC_URL || infuraRpc("mainnet") || "https://eth.drpc.org",
     fallbackRpc: "https://eth.drpc.org",
     rpcSource: "Infura",
     controller: "0x8B53Ab2c0Df3230EA327017C91Eb909f815Ad113",
@@ -20,7 +24,7 @@ const CHAINS = [
     name: "Arbitrum",
     rpc:
       process.env.ARBITRUM_RPC_URL ||
-      `https://arbitrum-mainnet.infura.io/v3/${INFURA_KEY}`,
+      infuraRpc("arbitrum-mainnet") || "https://arbitrum-one-rpc.publicnode.com",
     fallbackRpc: "https://arbitrum-one-rpc.publicnode.com",
     controller: "0x8E7e9eA9023B81457Ae7E6D2a51b003D421E5408",
     rpcSource: "Infura",
@@ -32,7 +36,7 @@ const CHAINS = [
     name: "Optimism",
     rpc:
       process.env.OPTIMISM_RPC_URL ||
-      `https://optimism-mainnet.infura.io/v3/${INFURA_KEY}`,
+      infuraRpc("optimism-mainnet") || "https://optimism-rpc.publicnode.com",
     fallbackRpc: "https://optimism-rpc.publicnode.com",
     controller: "0xA300A84D8970718Dac32f54F61Bd568142d8BCF4",
     rpcSource: "Infura",
@@ -44,7 +48,7 @@ const CHAINS = [
     name: "Polygon",
     rpc:
       process.env.POLYGON_RPC_URL ||
-      `https://polygon-mainnet.infura.io/v3/${INFURA_KEY}`,
+      infuraRpc("polygon-mainnet") || "https://polygon-bor-rpc.publicnode.com",
     fallbackRpc: "https://polygon-bor-rpc.publicnode.com",
     controller: "0x52eaCd19E38D501D006D2023C813d7E37F025f37",
     rpcSource: "Infura",
@@ -56,7 +60,7 @@ const CHAINS = [
     name: "BSC",
     rpc:
       process.env.BSC_RPC_URL ||
-      `https://bsc-mainnet.infura.io/v3/${INFURA_KEY}`,
+      infuraRpc("bsc-mainnet") || "https://bsc-rpc.publicnode.com",
     fallbackRpc: "https://bsc-rpc.publicnode.com",
     controller: "0x0b53E608bD058Bb54748C35148484fD627E6dc0A",
     rpcSource: "Infura",
@@ -77,7 +81,7 @@ const CHAINS = [
     name: "Base",
     rpc:
       process.env.BASE_RPC_URL ||
-      `https://base-mainnet.infura.io/v3/${INFURA_KEY}`,
+      infuraRpc("base-mainnet") || "https://base-rpc.publicnode.com",
     fallbackRpc: "https://base-rpc.publicnode.com",
     rpcSource: "Infura",
     controller: "0xBae8d153331129EB40E390A7Dd485363135fcE22",

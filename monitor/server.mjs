@@ -7,9 +7,8 @@ import {marketsSnapshot} from "./markets.mjs";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
-const INFURA_KEY = process.env.INFURA_KEY || "fc8ba3f3b8294917b0bfb6a37d711d4d";
 const RPC_URL =
-  process.env.ETH_RPC_URL || `https://mainnet.infura.io/v3/${INFURA_KEY}`;
+  process.env.ETH_RPC_URL || "https://ethereum-rpc.publicnode.com";
 const PORT = Number(process.env.PORT || 5177);
 const START_BLOCK = Number(process.env.UNITUS_START_BLOCK || 11927175);
 const BLOCK_CHUNK = Number(process.env.UNITUS_BLOCK_CHUNK || 20000);
