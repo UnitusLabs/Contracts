@@ -26,7 +26,7 @@
 
 - 结息后停止计息。
 - 普通 redeem 恢复。
-- 用户无需提交 withdrawal request，可以直接赎回全部可用 shares。
+- 用户无需提交 withdrawal request，可以直接赎回全部可用存款资金。
 
 ## 3. 每周取款
 
@@ -35,22 +35,25 @@
 - 使用 UTC timestamp。
 - 每周设置一个固定取款锚点。
 - 用户在锚点前提交的请求，在对应锚点后允许领取。
-- withdrawal request 到结算时间之间继续计息。
+- withdrawal request 在锚点前继续计息，并在锚点时间准确停止计息。
+- settlement 是否延迟不影响用户应得利息。
 
 ### 3.2 Withdrawal request
 
-- 请求以 shares 为单位。
+- 用户以 underlying 金额提交请求；合约内部仍以 shares 记账。
 - 请求不可撤销。
 - 同一用户可以在同一 Epoch 多次提交请求。
 - 多次请求累计为该用户在该 Epoch 的总 shares。
-- 用户只能请求其未进入 pending 状态的可用 shares。
+- 用户只能请求其 accruing 状态的可用金额。
 - pending shares 不能转移、重复请求或通过普通 redeem 赎回。
+- 前端不向用户展示 shares 或 Epoch，用户只处理 underlying 金额。
 
 ### 3.3 最后一个周期
 
 - 结息时间同时是最后一个周锚点。
 - 当用户请求对应的下一个锚点为结息时间时，不再接受 withdrawal request。
-- 产品端应提示用户等待结息，结息后可直接 redeem。
+- 最后一个周期将操作入口显示为 Withdraw，但禁止提交新请求。
+- 产品端提示“最后一个周期将在结息后开放取款”，结息后可直接 redeem。
 
 ## 4. Epoch settlement
 
@@ -73,22 +76,45 @@
 - 用户未领取的结算资产不得被管理员归集。
 - Epoch surplus 先保留在对应 Epoch，结息后由管理员统一归集。
 
-## 6. 待内部讨论的问题
-
-### 方案 A：利息截止到锚点
+## 6. 利息结算规则
 
 - 用户应得金额按照 Epoch 锚点时间确定。
 - settlement 延迟不会增加用户利息。
 - settlement 时实际赎回金额超过用户应得金额的部分作为 Epoch surplus。
 - surplus 保留在 Epoch，结息后由管理员归集。
+- 产品运行期间不得切换利息截止规则。
 
-### 方案 B：利息截止到实际 settlement
+## 7. 前端展示要求
 
-- 用户应得金额按照 Epoch 实际 settlement 时间确定。
-- settlement 越晚，用户获得的利息越多。
-- 可以直接按照 settlement 时实际赎回金额进行分配。
+### 7.1 产品信息
 
-最终方案需在产品上线前确定，运行期间不得切换。
+- 产品名称为 `Conflux RWA - FnL S1`。
+- Collateral 显示为 `Fin Loop`。
+- Vault 详情页不展示 APY 历史图表，该区域用于展示 withdrawal requests。
+
+### 7.2 用户余额
+
+- `USDT Supplied` 显示用户当前存款总额。
+- 总额拆分为 Pending、Claimable 和 Accruing 三部分，全部使用 underlying 金额。
+- `Available to Request` 等于 Accruing 金额。
+- 用户提交请求后，对应金额从 Accruing 进入 Pending。
+- 用户 claim 后，对应金额从 Claimable 和 `USDT Supplied` 中扣除。
+
+### 7.3 Withdrawal requests
+
+- Withdrawal requests 区域在计息期、最后一个周期和结息后始终保留。
+- 根据实际数据最多展示一个合并后的 Pending 入口和一个合并后的 Claimable 入口。
+- Pending 仅显示请求金额和预计可领取时间，不显示锚点预计到账金额；提示最终结算金额会略高于请求金额。
+- Claimable 仅显示准确可领取金额和实际可领取时间，不再展示原请求金额。
+- 不展示 Epoch 编号、shares 数量或 open 数量。
+- 无数据时展示与状态匹配的空状态，例如“暂无进行中的取款请求”“可领取资金已全部领取”或“剩余资金可直接取款”。
+
+### 7.4 生命周期状态
+
+- Regular epoch：显示 `Withdraw Request`，允许基于 Accruing 金额提交请求。
+- Last epoch：入口显示为 `Withdraw`，禁止提交请求，并提示结息后开放取款。
+- Matured：入口显示为 `Withdraw`，允许直接取出全部可用资金。
+- 前端参考原型提供 Regular epoch、Last epoch 和 Matured 状态切换栏；该切换栏仅用于开发演示，不属于生产功能。
 
 ---
 
@@ -139,16 +165,17 @@ Queue 同时记录已记账 shares。直接转入 Queue、但未经过 request �
 
 1. 确认 Epoch 已到锚点且尚未结算。
 2. 获取 Epoch 的总 pending shares。
-3. 确认 underlying 流动性充足。
-4. 由 Queue 聚合赎回全部 Epoch shares。
-5. 记录用户可领取总额。
-6. 标记 Epoch 已结算。
+3. 按锚点时间确定该 Epoch 的用户可领取总额。
+4. 确认 underlying 流动性充足。
+5. 由 Queue 聚合赎回全部 Epoch shares。
+6. 将实际赎回金额超出用户可领取总额的部分记录为 Epoch surplus。
+7. 标记 Epoch 已结算。
 
 任一条件不满足时，整个操作失败，不修改 Epoch 状态。
 
 如果用户调用 claim 时 Epoch 尚未结算，则先执行上述 settlement；失败时 claim 一并失败。
 
-方案 A 和方案 B 仅在“用户可领取总额”的确定时间上不同，其余 settlement 流程相同。
+settlement 延迟不改变用户可领取总额，也不增加用户利息。
 
 ## 5. Claim
 
