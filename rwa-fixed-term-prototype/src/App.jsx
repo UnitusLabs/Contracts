@@ -149,11 +149,11 @@ function PercentButtons({ max, onChange, disabled = false }) {
   return <div className="percent-buttons">{[25, 50, 75, 100].map((percent) => <button key={percent} disabled={disabled} onClick={() => onChange((max * percent / 100).toFixed(2))}>{percent}%</button>)}</div>;
 }
 
-function AmountPanel({ mode, amount, setAmount, onSubmit, availableToRequest, productState, suppliedBalance }) {
+function AmountPanel({ mode, amount, setAmount, onSubmit, availableToRequest, productState }) {
   const isSupply = mode === "supply";
   const isLastEpoch = productState === "last" && !isSupply;
   const isMatured = productState === "matured" && !isSupply;
-  const max = isSupply ? product.walletBalance : isMatured ? suppliedBalance : availableToRequest;
+  const max = isSupply ? product.walletBalance : availableToRequest;
   return (
     <div className="amount-panel">
       <div className="amount-balance"><span>{isSupply ? "USDT Balance" : isMatured ? "Available to Withdraw" : isLastEpoch ? "Accruing balance" : "Available to Request"}</span><strong>{money.format(max)}</strong></div>
@@ -181,9 +181,20 @@ function ProductSchedule() {
 }
 
 function EpochList({ epochs, onClaim, emptyMessage = "No active withdrawal requests." }) {
-  const displayedEpochs = ["Pending", "Claimable"]
-    .map((status) => epochs.find((epoch) => epoch.status === status))
-    .filter(Boolean);
+  const pendingEpoch = epochs.find((epoch) => epoch.status === "Pending");
+  const claimableEpochs = epochs.filter((epoch) => epoch.status === "Claimable");
+  const latestClaimableEpoch = claimableEpochs.reduce(
+    (latest, epoch) => !latest || epoch.id > latest.id ? epoch : latest,
+    null,
+  );
+  const claimableEpoch = latestClaimableEpoch && {
+    id: "claimable",
+    anchor: latestClaimableEpoch.anchor,
+    epochIds: claimableEpochs.map((epoch) => epoch.id),
+    receivable: claimableEpochs.reduce((sum, epoch) => sum + epoch.receivable, 0),
+    status: "Claimable",
+  };
+  const displayedEpochs = [pendingEpoch, claimableEpoch].filter(Boolean);
 
   return (
     <section className="epoch-section">
@@ -217,12 +228,8 @@ function VaultPage({ onBack, notify }) {
 
     if (nextState === "regular") {
       setEpochs(initialEpochs);
-    } else if (nextState === "last") {
-      const requested = initialEpochs.reduce((sum, epoch) => sum + epoch.requested, 0);
-      const receivable = initialEpochs.reduce((sum, epoch) => sum + epoch.receivable, 0);
-      setEpochs([{ id: "last-window", anchor: product.nextAnchor, requested, receivable, status: "Claimable" }]);
     } else {
-      setEpochs([]);
+      setEpochs(initialEpochs.map((epoch) => epoch.status === "Pending" ? { ...epoch, status: "Claimable" } : epoch));
     }
   }
 
@@ -248,7 +255,7 @@ function VaultPage({ onBack, notify }) {
 
   function confirmClaim() {
     const epoch = confirm.epoch;
-    setEpochs((current) => current.map((item) => item.id === epoch.id ? { ...item, status: "Claimed" } : item));
+    setEpochs((current) => current.map((item) => epoch.epochIds.includes(item.id) ? { ...item, status: "Claimed" } : item));
     setSuppliedBalance((current) => Math.max(0, current - epoch.receivable));
     setConfirm(null);
     notify("Withdrawal settled and claimed.");
@@ -265,19 +272,16 @@ function VaultPage({ onBack, notify }) {
         <div className="vault-grid">
           <section className="action-card">
             <div className="supplied-title"><span><img src="/assets/usdt.svg" alt="" />USDT Supplied</span><strong>{money.format(suppliedBalance)}</strong></div>
-            <div className="balance-breakdown">
-              {productState === "matured" ? <div><span>Available</span><strong>{money.format(suppliedBalance)} USDT</strong></div> : <><div><span>Pending</span><strong>{money.format(pendingBalance)} USDT</strong></div><div><span>Claimable</span><strong>{money.format(claimableBalance)} USDT</strong></div><div><span>Accruing</span><strong>{money.format(accruingBalance)} USDT</strong></div></>}
-            </div>
             <div className="action-tabs"><button disabled={productState === "matured"} className={mode === "supply" ? "active" : ""} onClick={() => { setMode("supply"); setAmount(""); }}>Supply</button><button className={mode === "withdraw" ? "active" : ""} onClick={() => { setMode("withdraw"); setAmount(""); }}>{productState === "regular" ? "Withdraw Request" : "Withdraw"}</button></div>
-            <AmountPanel mode={mode} amount={amount} setAmount={setAmount} onSubmit={submitAmount} availableToRequest={accruingBalance} productState={productState} suppliedBalance={suppliedBalance} />
+            <AmountPanel mode={mode} amount={amount} setAmount={setAmount} onSubmit={submitAmount} availableToRequest={accruingBalance} productState={productState} />
           </section>
-          <section className="vault-stats"><dl><div><dt>Total Deposits</dt><dd>{product.totalDeposits}</dd></div><div><dt>Liquidity</dt><dd>{product.liquidity}</dd></div><div><dt>Fixed APY</dt><dd>{product.apy}</dd></div></dl><EpochList epochs={epochs} onClaim={(epoch) => setConfirm({ type: "claim", epoch })} emptyMessage={productState === "matured" ? "No active requests. Remaining funds are available for direct withdrawal." : productState === "last" ? "All claimable withdrawals have been completed." : "No active withdrawal requests."} /></section>
+          <section className="vault-stats"><dl><div><dt>Total Deposits</dt><dd>{product.totalDeposits}</dd></div><div><dt>Liquidity</dt><dd>{product.liquidity}</dd></div><div><dt>Fixed APY</dt><dd>{product.apy}</dd></div></dl><EpochList epochs={epochs} onClaim={(epoch) => setConfirm({ type: "claim", epoch })} emptyMessage={productState === "matured" ? "No queued withdrawals. Remaining funds are available for direct withdrawal." : productState === "last" ? "All claimable withdrawals have been completed." : "No active withdrawal requests."} /></section>
         </div>
       </section>
       {confirm?.type === "withdraw" && <Modal onClose={() => setConfirm(null)} className="confirm-modal"><CalendarClock className="modal-icon" size={34} /><h3>Confirm withdrawal request</h3><p>Your request cannot be cancelled. The requested funds earn interest until the weekly anchor and stop accruing exactly at that time.</p><div className="confirm-details"><div><span>Request amount</span><strong>{money.format(confirm.amount)} USDT</strong></div><div><span>Interest cutoff &amp; withdrawal anchor</span><strong>{product.nextAnchor} UTC</strong></div></div><button className="primary-action" onClick={confirmAction}>Confirm Request</button></Modal>}
       {confirm?.type === "supply" && <Modal onClose={() => setConfirm(null)} className="confirm-modal"><CircleDollarSign className="modal-icon" size={34} /><h3>Confirm supply</h3><p>This prototype simulates the existing Unitus supply flow.</p><div className="confirm-details"><div><span>Supply amount</span><strong>{money.format(confirm.amount)} USDT</strong></div><div><span>Fixed APY</span><strong>{product.apy}</strong></div></div><button className="primary-action" onClick={confirmAction}>Confirm Supply</button></Modal>}
       {confirm?.type === "redeem" && <Modal onClose={() => setConfirm(null)} className="confirm-modal"><CircleDollarSign className="modal-icon" size={34} /><h3>Confirm withdrawal</h3><p>The product has matured and interest has stopped. Your funds are available for direct withdrawal.</p><div className="confirm-details"><div><span>Withdrawal amount</span><strong>{money.format(confirm.amount)} USDT</strong></div></div><button className="primary-action" onClick={confirmAction}>Confirm Withdrawal</button></Modal>}
-      {confirm?.type === "claim" && <Modal onClose={() => setConfirm(null)} className="confirm-modal"><CheckCircle2 className="modal-icon" size={34} /><h3>Settle and claim withdrawal</h3><p>Interest stopped exactly at {confirm.epoch.anchor} UTC. This claim first settles the full withdrawal window; settlement timing does not change the receivable. If liquidity is insufficient, the entire action fails and can be retried later.</p><div className="confirm-details"><div><span>Exact claimable amount</span><strong>{money.format(confirm.epoch.receivable)} USDT</strong></div></div><button className="primary-action" onClick={confirmClaim}>Settle &amp; Claim</button></Modal>}
+      {confirm?.type === "claim" && <Modal onClose={() => setConfirm(null)} className="confirm-modal"><CheckCircle2 className="modal-icon" size={34} /><h3>Settle and claim withdrawal</h3><p>Interest stopped by {confirm.epoch.anchor} UTC. This claim settles all included withdrawal windows; settlement timing does not change the receivable. If liquidity is insufficient, the entire action fails and can be retried later.</p><div className="confirm-details"><div><span>Exact claimable amount</span><strong>{money.format(confirm.epoch.receivable)} USDT</strong></div></div><button className="primary-action" onClick={confirmClaim}>Settle &amp; Claim</button></Modal>}
     </main>
   );
 }

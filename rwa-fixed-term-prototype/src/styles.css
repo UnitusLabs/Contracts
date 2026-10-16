@@ -145,10 +145,6 @@ footer a:hover { color: #fff; }
 .supplied-title span { display: flex; align-items: center; gap: 8px; font-weight: 600; }
 .supplied-title img { width: 26px; }
 .supplied-title > strong { font-size: 28px; font-weight: 500; }
-.balance-breakdown { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
-.balance-breakdown > div { min-width: 0; padding: 10px; background: #222225; display: flex; flex-direction: column; gap: 5px; }
-.balance-breakdown span { color: var(--muted); font-size: 11px; }
-.balance-breakdown strong { font-size: 12px; white-space: nowrap; }
 .action-tabs { display: grid; grid-template-columns: 1fr 1fr; background: #2a2a2d; margin-top: 18px; }
 .action-tabs button { height: 54px; border: 0; background: transparent; color: #99999f; font-size: 15px; font-weight: 700; cursor: pointer; }
 .action-tabs button.active { color: #111; background: var(--accent); }
@@ -292,9 +288,6 @@ footer a:hover { color: #fff; }
   .action-card { padding: 12px; }
   .supplied-title { font-size: 15px; }
   .supplied-title > strong { font-size: 17px; }
-  .balance-breakdown { gap: 5px; }
-  .balance-breakdown > div { padding: 8px 6px; }
-  .balance-breakdown strong { font-size: 10px; }
   .action-tabs button { height: 45px; font-size: 13px; }
   .amount-panel { padding: 11px; margin-top: 12px; }
   .amount-input input { font-size: 23px; }
