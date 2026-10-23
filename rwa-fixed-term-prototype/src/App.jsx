@@ -133,14 +133,88 @@ function EarnPage({ onOpenVault }) {
 }
 
 function BorrowPage({ notify }) {
+  const [repaymentState, setRepaymentState] = useState("scheduled");
+  const [detail, setDetail] = useState(null);
+  const [collateralSupplied, setCollateralSupplied] = useState(300000);
+  const [collateralWallet, setCollateralWallet] = useState(500000);
+  const [eagSupplied, setEagSupplied] = useState(700000);
+  const [eagWallet, setEagWallet] = useState(0);
+  const [debt, setDebt] = useState(92400);
+  const [usdtWallet, setUsdtWallet] = useState(112420.66);
+  const [amountInput, setAmountInput] = useState("");
+
+  const operations = {
+    supplyCollateral: { title: "Supply collateral", asset: "FnL Collateral", availableLabel: "Wallet balance", available: collateralWallet, action: "Supply" },
+    withdrawCollateral: { title: "Withdraw collateral", asset: "FnL Collateral", availableLabel: "Supplied collateral", available: collateralSupplied, action: "Withdraw" },
+    withdrawEag: { title: "Withdraw collateral", asset: "EAG", availableLabel: "Supplied collateral", available: eagSupplied, action: "Withdraw" },
+    borrowUsdt: { title: "Borrow USDT", asset: "USDT", availableLabel: "Available liquidity", available: 92400, action: "Borrow" },
+    repayUsdt: { title: "Repay USDT", asset: "USDT", availableLabel: "Repayable amount", available: Math.min(debt, usdtWallet), action: "Repay" },
+  };
+  const activeOperation = detail && operations[detail];
+  const amount = Number(amountInput);
+
+  function openOperation(type, presetAmount = "") {
+    setDetail(type);
+    setAmountInput(presetAmount ? String(presetAmount) : "");
+  }
+
+  function confirmOperation() {
+    if (!activeOperation || amount <= 0 || amount > activeOperation.available) return;
+
+    if (detail === "supplyCollateral") {
+      setCollateralSupplied((current) => current + amount);
+      setCollateralWallet((current) => current - amount);
+    } else if (detail === "withdrawCollateral") {
+      setCollateralSupplied((current) => current - amount);
+      setCollateralWallet((current) => current + amount);
+    } else if (detail === "withdrawEag") {
+      setEagSupplied((current) => current - amount);
+      setEagWallet((current) => current + amount);
+    } else if (detail === "borrowUsdt") {
+      setDebt((current) => current + amount);
+      setUsdtWallet((current) => current + amount);
+    } else {
+      setDebt((current) => current - amount);
+      setUsdtWallet((current) => current - amount);
+    }
+
+    notify(`${activeOperation.action} completed: ${money.format(amount)} ${activeOperation.asset}.`);
+    setAmountInput("");
+  }
+
+  const isEag = detail === "withdrawEag";
+  const isCollateral = detail === "supplyCollateral" || detail === "withdrawCollateral" || isEag;
+  const isRepay = detail === "repayUsdt";
+  const marketRows = [
+    { asset: "USDT", detail: "22 Dec 2025 (Matured)", icon: "/assets/usdt.svg", supply: "0.00%", borrow: "8.00%", size: "1.08K", liquidity: "1.08K" },
+    { asset: "EAG", icon: "/assets/eagle-power.svg", supply: "0.00%", borrow: "0.00%", size: "700.00K", liquidity: "700.00K" },
+    { asset: "USDT", detail: "15 Sep 2025 (Matured)", icon: "/assets/usdt.svg", supply: "0.00%", borrow: "8.00%", size: "166.05", liquidity: "166.05" },
+  ];
+
+  if (detail) return (
+    <main className="page-shell borrow-detail-page">
+      <button className="back-button" onClick={() => setDetail(null)}><ArrowLeft size={16} />Back</button>
+      <section className="vault-card borrow-detail-card">
+        <div className="action-card">
+          <div className="supplied-title"><span><img src={isEag ? "/assets/eagle-power.svg" : isCollateral ? "/assets/fin-loop.svg" : "/assets/usdt.svg"} alt="" />{isEag ? "EAG Supplied" : isCollateral ? "FnL Collateral Supplied" : "USDT Borrowed"}</span><strong>{money.format(isEag ? eagSupplied : isCollateral ? collateralSupplied : debt)}</strong></div>
+          <div className="action-tabs"><button disabled={isEag} className={!isRepay && (isCollateral ? detail === "supplyCollateral" : detail === "borrowUsdt") ? "active" : ""} onClick={() => openOperation(isCollateral ? "supplyCollateral" : "borrowUsdt")}>{isCollateral ? "Supply" : "Borrow"}</button><button className={isEag || (isCollateral ? detail === "withdrawCollateral" : isRepay) ? "active" : ""} onClick={() => openOperation(isEag ? "withdrawEag" : isCollateral ? "withdrawCollateral" : "repayUsdt")}>{isCollateral ? "Withdraw" : "Repay"}</button></div>
+          <div className="amount-panel"><div className="amount-balance"><span>{activeOperation.availableLabel}</span><strong>{money.format(activeOperation.available)}</strong></div><div className="amount-input"><input aria-label="Amount" inputMode="decimal" value={amountInput} placeholder="0.00" onChange={(event) => setAmountInput(event.target.value.replace(/[^0-9.]/g, ""))} /><span>Amount</span></div><PercentButtons max={activeOperation.available} onChange={setAmountInput} /><button className="primary-action" disabled={amount <= 0 || amount > activeOperation.available} onClick={confirmOperation}>{activeOperation.action}</button></div>
+        </div>
+        <div className="vault-stats">
+          <dl><div><dt>{isCollateral ? "Total Supply" : "Total Borrow"}</dt><dd>{isEag ? "$700.00K" : isCollateral ? "$300.00K" : "$92.40K"}</dd></div><div><dt>Liquidity</dt><dd>{isEag ? "700.00K" : isCollateral ? "300.00K" : "92.40K"}</dd></div><div><dt>{isCollateral ? "Supply APY" : "Borrow APY"}</dt><dd>{isCollateral ? "0.00%" : "8.00%"}</dd></div></dl>
+          {!isCollateral && <><section className="state-simulator repayment-simulator" aria-label="Repayment state simulator"><span>Repayment state</span><div>{[["scheduled", "Pending repay"], ["due", "Repay due"], ["maturity", "Product due"]].map(([value, label]) => <button key={value} className={repaymentState === value ? "active" : ""} onClick={() => setRepaymentState(value)}>{label}</button>)}</div></section><section className="repayment-card"><div className="repayment-heading"><h2>Repayment for withdrawals</h2></div>{repaymentState === "due" && <div className="repayment-item"><div><span>Repay now</span><strong>18,500.00 USDT</strong></div><button onClick={() => openOperation("repayUsdt", 18500)}>Repay</button></div>}{repaymentState !== "maturity" ? <div className="repayment-item"><div><span>Pending repay at</span><strong>20:00, 27 Oct 2026 UTC</strong></div><div><span>Amount</span><strong>25,000.00 USDT</strong></div></div> : <div className="repayment-item"><div><span>No pending repay</span><strong>Product due: 20:00, 22 Dec 2026 UTC</strong></div><button onClick={() => openOperation("repayUsdt", Math.min(debt, usdtWallet))}>Repay</button></div>}</section></>}
+        </div>
+      </section>
+    </main>
+  );
+
   return (
     <main className="page-shell borrow-page">
       <h1>My Assets</h1>
-      <section className="asset-summary"><div><strong>$0.00</strong><span>Total Supply</span></div><div><strong>$0.00</strong><span>Total Debts</span></div><div><strong>...</strong><span>Adequacy Ratio</span></div></section>
-      <section className="borrow-panels"><div><h3>Supplies</h3><p>Nothing supplied yet</p></div><div><h3>Borrows</h3><p>Nothing borrowed yet</p></div></section>
-      <section className="market-card"><h3>Markets</h3><div className="borrow-table-header"><span>Assets</span><span>Supply APY</span><span>Borrow APY</span><span>Market Size</span><span>Liquidity</span><span>Wallet</span><span /></div>
-        <div className="borrow-row"><div className="asset-name"><img src="/assets/usdt.svg" alt="" /><div><strong>USDT</strong><span>22 Dec 2026</span></div></div><span className="positive">8.00%</span><span className="negative">8.00%</span><span>184.72K<small>$184.72K</small></span><span>92.40K<small>$92.40K</small></span><span>12.42K</span><div className="row-actions"><button onClick={() => notify("Existing borrow flow is unchanged in this prototype.")}>Borrow</button><button onClick={() => notify("Existing repay flow is unchanged in this prototype.")}>Repay</button></div></div>
-      </section>
+      <section className="asset-summary"><div><strong>${money.format(collateralSupplied + eagSupplied)}</strong><span>Total Supply</span></div><div><strong>${money.format(debt)}</strong><span>Total Debts</span></div><div><strong>{debt ? `${(collateralSupplied / debt).toFixed(2)}` : "..."}</strong><span>Adequacy Ratio</span></div></section>
+      <section className="borrow-panels"><div><h3>Supplies</h3><p>FnL Collateral <strong>{money.format(collateralSupplied)}</strong></p><p>EAG <strong>{money.format(eagSupplied)}</strong></p></div><div><h3>Borrows</h3><p>USDT <strong>{money.format(debt)}</strong></p></div></section>
+      <section className="market-card"><div className="pool-heading"><h3>Fin Loop pool</h3><span>Active · Conflux RWA - FnL S1</span></div><p className="pool-notice">{repaymentState === "due" ? "18,500.00 USDT repayment due now · next 25,000.00 USDT at 20:00, 27 Oct 2026 UTC" : repaymentState === "maturity" ? "Product due · repay remaining USDT debt" : "Scheduled repayment: 25,000.00 USDT at 20:00, 27 Oct 2026 UTC"}</p><div className="borrow-table-header"><span>Assets</span><span>Supply APY</span><span>Borrow APY</span><span>Market Size</span><span>Liquidity</span><span>Wallet</span><span /></div><div className="borrow-row"><div className="asset-name"><img src="/assets/usdt.svg" alt="" /><div><strong>USDT</strong><span>22 Dec 2026</span></div></div><span>0.00%</span><span>8.00%</span><span>184.72K</span><span>92.40K</span><span>{money.format(usdtWallet)}</span><div className="row-actions"><button onClick={() => openOperation("borrowUsdt")}>Borrow</button><button onClick={() => openOperation("repayUsdt")}>Repay</button></div></div><div className="borrow-row"><div className="asset-name"><img src="/assets/fin-loop.svg" alt="" /><div><strong>FnL Collateral</strong></div></div><span>0.00%</span><span>0.00%</span><span>300.00K</span><span>300.00K</span><span>{money.format(collateralWallet)}</span><div className="row-actions"><button onClick={() => openOperation("supplyCollateral")}>Supply</button><button onClick={() => openOperation("withdrawCollateral")}>Withdraw</button></div></div></section>
+      <section className="market-card"><div className="pool-heading"><h3>EAG pool</h3><span>Matured · historical markets</span></div><div className="borrow-table-header"><span>Assets</span><span>Supply APY</span><span>Borrow APY</span><span>Market Size</span><span>Liquidity</span><span>Wallet</span><span /></div>{marketRows.map((row, index) => <div className="borrow-row" key={index}><div className="asset-name"><img src={row.icon} alt="" /><div><strong>{row.asset}</strong><span>{row.detail}</span></div></div><span>{row.supply}</span><span>{row.borrow}</span><span>{row.size}<small>${row.size}</small></span><span>{row.liquidity}<small>${row.liquidity}</small></span><span>{row.asset === "EAG" ? money.format(eagWallet) : "0.00"}</span><div className="row-actions">{row.asset === "EAG" ? <><button disabled>Supply</button><button onClick={() => openOperation("withdrawEag")}>Withdraw</button></> : <><button disabled>Borrow</button><button disabled>Repay</button></>}</div></div>)}</section>
     </main>
   );
 }

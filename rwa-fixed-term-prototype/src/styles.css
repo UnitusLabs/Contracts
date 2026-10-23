@@ -201,25 +201,68 @@ footer a:hover { color: #fff; }
 .status.claimed { color: #8b8b92; background: #2b2b2e; }
 .claim-button { height: 34px; padding: 0 16px; border: 0; background: var(--accent); color: #111; font-weight: 700; cursor: pointer; }
 
-.asset-summary { display: flex; gap: 80px; margin: 34px 0 36px; }
+.borrow-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.borrow-title p { margin: 10px 0 0; color: var(--muted); }
+.repayment-simulator { margin-top: 28px; }
+.asset-summary { display: flex; gap: 80px; margin: 28px 0; }
 .asset-summary div { display: flex; flex-direction: column; gap: 8px; }
 .asset-summary strong { font-size: 28px; font-weight: 500; }
 .asset-summary span { color: var(--muted); }
 .borrow-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.borrow-panels > div, .market-card { background: var(--panel); padding: 18px; }
-.borrow-panels h3, .market-card h3 { margin: 0 0 35px; }
-.borrow-panels p { color: var(--muted); }
+.repayment-card { margin-bottom: 20px; padding: 22px; background: var(--panel); }
+.repayment-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+.repayment-heading span, .repayment-item span, .repayment-item small { color: var(--muted); font-size: 12px; }
+.repayment-heading h2 { margin: 5px 0 0; font-size: 22px; }
+.repayment-status { padding: 6px 9px; border-radius: 3px; }
+.repayment-status.scheduled { color: #efbd68; background: rgba(239,189,104,.1); }
+.repayment-status.due, .repayment-status.maturity { color: var(--negative); background: rgba(239,106,114,.1); }
+.repayment-item { min-height: 76px; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 22px; padding: 14px 16px; background: #18181a; border: 1px solid var(--border); }
+.repayment-item > div { display: flex; flex-direction: column; gap: 6px; }
+.repayment-item strong { font-size: 15px; }
+.repayment-due { grid-template-columns: 1fr auto; border-color: rgba(239,106,114,.35); }
+.repayment-due button, .position-actions button { height: 38px; padding: 0 20px; border: 0; background: var(--accent); color: #111; font-weight: 700; cursor: pointer; }
+.borrow-position { padding: 22px; background: var(--panel); }
+.position-heading { display: flex; justify-content: space-between; align-items: flex-start; }
+.position-heading > span { color: var(--muted); font-size: 12px; }
+.position-balance { display: block; margin-top: 26px; font-size: 30px; font-weight: 500; }
+.borrow-position > small { display: block; margin-top: 6px; color: var(--muted); }
+.position-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 24px; }
+.position-actions button { width: 100%; }
+.position-actions .secondary-action { color: #fff; background: #3a3a3f; }
+.borrow-modal > p { color: #777b84; }
+.borrow-amount-input { height: 74px; display: flex; align-items: center; gap: 10px; margin: 20px 0; padding: 0 14px; background: #f2f3f5; }
+.borrow-amount-input input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; text-align: right; font-size: 26px; }
+.borrow-amount-input span { color: #666a74; font-size: 14px; }
+.borrow-panels > div, .market-card { padding: 18px; background: var(--panel); }
+.borrow-panels h3 { margin: 0 0 28px; }
+.borrow-panels p { display: flex; justify-content: space-between; color: var(--muted); }
+.borrow-panels p strong { color: #fff; }
 .market-card { margin-top: 20px; }
-.market-card h3 { margin-bottom: 14px; }
+.pool-heading { display: flex; align-items: baseline; gap: 15px; margin-bottom: 14px; }
+.pool-heading h3 { margin: 0; }
+.pool-heading span { color: var(--muted); font-size: 13px; }
+.pool-notice { margin: 0 0 14px; padding: 11px 13px; color: #efbd68; background: rgba(239,189,104,.09); border: 1px solid rgba(239,189,104,.18); font-size: 13px; }
 .borrow-table-header, .borrow-row { display: grid; grid-template-columns: 1.45fr repeat(5, .8fr) 1.1fr; gap: 12px; align-items: center; }
-.borrow-table-header { height: 40px; padding: 0 10px; background: #18181a; color: #92929b; font-size: 13px; }
-.borrow-row { min-height: 72px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.borrow-table-header { min-height: 40px; padding: 0 10px; background: #18181a; color: var(--muted); font-size: 13px; }
+.borrow-row { min-height: 68px; padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 14px; }
+.borrow-row:last-child { border-bottom: 0; }
 .borrow-row > span { display: flex; flex-direction: column; }
 .borrow-row small { color: var(--muted); margin-top: 3px; }
-.positive { color: var(--positive); }
-.negative { color: var(--negative); }
 .row-actions { display: flex; gap: 8px; }
-.row-actions button { flex: 1; height: 36px; border: 0; background: #4b4b50; font-weight: 600; cursor: pointer; }
+.row-actions button { flex: 1; height: 36px; border: 0; background: var(--accent); color: #111; font-weight: 700; cursor: pointer; }
+.row-actions button:last-child { background: #e8f9c7; }
+.row-actions button:disabled { background: #48484c; color: #99999f; cursor: not-allowed; }
+.row-actions > span { color: var(--muted); }
+.borrow-detail-page { max-width: 1200px; }
+.borrow-detail-card { display: grid; grid-template-columns: 1.05fr .95fr; gap: 26px; }
+.borrow-detail-card .vault-stats { padding: 12px 8px; }
+.borrow-detail-card .repayment-card { margin: 20px 0 0; padding: 16px; }
+.borrow-detail-card .repayment-heading h2 { font-size: 18px; }
+.borrow-detail-card .repayment-item { margin-top: 8px; }
+.borrow-detail-card .repayment-item button { height: 34px; padding: 0 14px; border: 0; background: var(--accent); color: #111; font-weight: 700; cursor: pointer; }
+.borrow-detail-card .repayment-simulator { margin-top: 25px; }
+.borrow-detail-card .repayment-simulator { display: block; }
+.borrow-detail-card .repayment-simulator > div { margin-top: 10px; }
 
 .modal-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: rgba(13,14,18,.82); backdrop-filter: blur(1px); }
 .modal { width: min(520px, 100%); position: relative; background: #fff; color: #222; padding: 20px; border-radius: 17px; box-shadow: 0 24px 80px rgba(0,0,0,.5); }
@@ -306,13 +349,19 @@ footer a:hover { color: #fff; }
   .epoch-row .status { grid-column: 1; }
   .epoch-row > div:last-child { grid-column: 2; grid-row: 3; }
   .borrow-panels { grid-template-columns: 1fr; }
+  .borrow-detail-card { grid-template-columns: 1fr; }
+  .borrow-table-header { display: none; }
+  .borrow-row { grid-template-columns: 1fr 1fr; }
+  .borrow-row > *:nth-child(n+3):nth-child(-n+6) { display: none; }
+  .row-actions { grid-column: 1 / -1; }
+  .borrow-title p { font-size: 12px; }
   .asset-summary { gap: 25px; }
   .asset-summary strong { font-size: 20px; }
   .asset-summary span { font-size: 12px; }
-  .borrow-table-header { display: none; }
-  .borrow-row { grid-template-columns: 1fr 1fr; }
-  .borrow-row > *:nth-child(n+6) { display: none; }
-  .row-actions { display: flex !important; grid-column: 1 / -1; }
+  .repayment-card, .borrow-position { padding: 14px; }
+  .repayment-item { grid-template-columns: 1fr; gap: 14px; }
+  .repayment-due { grid-template-columns: 1fr; }
+  .repayment-due button { width: 100%; }
   .account-connection { font-size: 12px; }
   .account-address { font-size: 23px; }
   .account-links { flex-wrap: wrap; }
