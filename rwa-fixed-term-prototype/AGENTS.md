@@ -17,3 +17,4 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 - The final week accepts no withdrawal requests; normal redeem resumes after maturity.
 - Interest settlement uses option A: interest stops accruing exactly at the weekly anchor, regardless of when the epoch is settled.
 - Direct transfers to the queue are unsupported and have no recovery flow.
+- Earn vault rows show concise product-feature descriptions beneath the vault name.

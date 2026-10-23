@@ -111,8 +111,9 @@ function EarnPage({ onOpenVault }) {
         <table className="market-table">
           <thead><tr><th>Vault</th><th>Start At <Info size={12} /></th><th>APY</th><th>Deposits</th><th>Supply Cap</th><th>Curator</th><th>Collateral</th></tr></thead>
           <tbody>
+            <tr className="vault-status-row"><th colSpan="7">Active</th></tr>
             <tr className="clickable-row" onClick={onOpenVault}>
-              <td data-label="Vault"><div className="asset-name"><img src="/assets/usdt.svg" alt="" /><div><strong>{product.name}</strong><span>{product.matureAt} (Interest Period)</span></div></div></td>
+              <td data-label="Vault"><div className="asset-name"><img src="/assets/usdt.svg" alt="" /><div><strong>{product.name}</strong><span>{product.matureAt} (Interest Period)</span><span className="vault-features">Fixed-term · Fixed-rate · Weekly withdrawal window</span></div></div></td>
               <td data-label="Start At"><strong>{product.startAt}</strong><span>Weekly Withdrawal</span></td>
               <td data-label="APY"><strong>8%</strong></td>
               <td data-label="Deposits"><strong>{product.totalDepositsToken}</strong><span>{product.totalDeposits}</span></td>
@@ -120,16 +121,25 @@ function EarnPage({ onOpenVault }) {
               <td data-label="Curator"><img className="partner-logo" src="/assets/conflux-foundation.svg" alt="Conflux Foundation" /></td>
               <td data-label="Collateral"><div className="partner-name"><img src="/assets/fin-loop.svg" alt="" />{product.collateral}</div></td>
             </tr>
+            <tr className="vault-status-row"><th colSpan="7">Scheduled</th></tr>
             <tr className="muted-row">
-              <td><div className="asset-name"><img src="/assets/usdt.svg" alt="" /><div><strong>Conflux RWA - EAG S2</strong><span>22 Dec 2025 (Matured)</span></div></div></td>
+              <td><div className="asset-name"><img src="/assets/usdt.svg" alt="" /><div><strong>dForce Vault</strong><span>Illustrative scheduled vault</span><span className="vault-features">Fixed-term · Fixed-rate</span></div></div></td>
+              <td><strong>20:00, 22 Nov 2026</strong><span>Not yet active</span></td><td><strong>8%</strong></td><td><strong>0.00K</strong><span>$0.00</span></td><td><strong>300.00K</strong></td><td><strong>dForce</strong></td><td><span>To be announced</span></td>
+            </tr>
+            <tr className="vault-status-row"><th colSpan="7">Matured</th></tr>
+            <tr className="muted-row">
+              <td><div className="asset-name"><img src="/assets/usdt.svg" alt="" /><div><strong>Conflux RWA - EAG S2</strong><span>22 Dec 2025 (Matured)</span><span className="vault-features">Fixed-term · Maturity withdrawal</span></div></div></td>
               <td><strong>20:00, 22 Sep 2025</strong><span>Withdrawal Period</span></td><td><strong>8%</strong></td><td><strong>1.08K</strong><span>$1.08K</span></td><td><strong>300.00K</strong></td><td><img className="partner-logo" src="/assets/conflux-foundation.svg" alt="Conflux Foundation" /></td><td><div className="partner-name"><img src="/assets/eagle-power.svg" alt="" />Eagle Power</div></td>
             </tr>
-            <tr className="coming-row"><td><div className="asset-name muted"><img src="/assets/dforce-logo.svg" alt="" /><strong>dForce Vault</strong></div></td><td colSpan="6">Coming soon...</td></tr>
           </tbody>
         </table>
       </section>
     </main>
   );
+}
+
+function PoolPositions({ supplied, borrowed }) {
+  return <div className="borrow-panels pool-positions"><div><h3>Supplies</h3><p><strong>${money.format(supplied)}</strong></p></div><div><h3>Borrows</h3><p><strong>${money.format(borrowed)}</strong></p></div></div>;
 }
 
 function BorrowPage({ notify }) {
@@ -212,9 +222,8 @@ function BorrowPage({ notify }) {
     <main className="page-shell borrow-page">
       <h1>My Assets</h1>
       <section className="asset-summary"><div><strong>${money.format(collateralSupplied + eagSupplied)}</strong><span>Total Supply</span></div><div><strong>${money.format(debt)}</strong><span>Total Debts</span></div><div><strong>{debt ? `${(collateralSupplied / debt).toFixed(2)}` : "..."}</strong><span>Adequacy Ratio</span></div></section>
-      <section className="borrow-panels"><div><h3>Supplies</h3><p>FnL Collateral <strong>{money.format(collateralSupplied)}</strong></p><p>EAG <strong>{money.format(eagSupplied)}</strong></p></div><div><h3>Borrows</h3><p>USDT <strong>{money.format(debt)}</strong></p></div></section>
-      <section className="market-card"><div className="pool-heading"><h3>Fin Loop pool</h3><span>Active · Conflux RWA - FnL S1</span></div><p className="pool-notice">{repaymentState === "due" ? "18,500.00 USDT repayment due now · next 25,000.00 USDT at 20:00, 27 Oct 2026 UTC" : repaymentState === "maturity" ? "Product due · repay remaining USDT debt" : "Scheduled repayment: 25,000.00 USDT at 20:00, 27 Oct 2026 UTC"}</p><div className="borrow-table-header"><span>Assets</span><span>Supply APY</span><span>Borrow APY</span><span>Market Size</span><span>Liquidity</span><span>Wallet</span><span /></div><div className="borrow-row"><div className="asset-name"><img src="/assets/usdt.svg" alt="" /><div><strong>USDT</strong><span>22 Dec 2026</span></div></div><span>0.00%</span><span>8.00%</span><span>184.72K</span><span>92.40K</span><span>{money.format(usdtWallet)}</span><div className="row-actions"><button onClick={() => openOperation("borrowUsdt")}>Borrow</button><button onClick={() => openOperation("repayUsdt")}>Repay</button></div></div><div className="borrow-row"><div className="asset-name"><img src="/assets/fin-loop.svg" alt="" /><div><strong>FnL Collateral</strong></div></div><span>0.00%</span><span>0.00%</span><span>300.00K</span><span>300.00K</span><span>{money.format(collateralWallet)}</span><div className="row-actions"><button onClick={() => openOperation("supplyCollateral")}>Supply</button><button onClick={() => openOperation("withdrawCollateral")}>Withdraw</button></div></div></section>
-      <section className="market-card"><div className="pool-heading"><h3>EAG pool</h3><span>Matured · historical markets</span></div><div className="borrow-table-header"><span>Assets</span><span>Supply APY</span><span>Borrow APY</span><span>Market Size</span><span>Liquidity</span><span>Wallet</span><span /></div>{marketRows.map((row, index) => <div className="borrow-row" key={index}><div className="asset-name"><img src={row.icon} alt="" /><div><strong>{row.asset}</strong><span>{row.detail}</span></div></div><span>{row.supply}</span><span>{row.borrow}</span><span>{row.size}<small>${row.size}</small></span><span>{row.liquidity}<small>${row.liquidity}</small></span><span>{row.asset === "EAG" ? money.format(eagWallet) : "0.00"}</span><div className="row-actions">{row.asset === "EAG" ? <><button disabled>Supply</button><button onClick={() => openOperation("withdrawEag")}>Withdraw</button></> : <><button disabled>Borrow</button><button disabled>Repay</button></>}</div></div>)}</section>
+      <section className="market-card"><div className="pool-heading"><h3>Fin Loop pool</h3><span>Active · Conflux RWA - FnL S1</span></div><PoolPositions supplied={collateralSupplied} borrowed={debt} /><p className="pool-notice">{repaymentState === "due" ? "18,500.00 USDT repayment due now · next 25,000.00 USDT at 20:00, 27 Oct 2026 UTC" : repaymentState === "maturity" ? "Product due · repay remaining USDT debt" : "Scheduled repayment: 25,000.00 USDT at 20:00, 27 Oct 2026 UTC"}</p><div className="borrow-table-header"><span>Assets</span><span>Supply APY</span><span>Borrow APY</span><span>Market Size</span><span>Liquidity</span><span>Wallet</span><span /></div><div className="borrow-row"><div className="asset-name"><img src="/assets/usdt.svg" alt="" /><div><strong>USDT</strong><span>22 Dec 2026</span></div></div><span>0.00%</span><span>8.00%</span><span>184.72K</span><span>92.40K</span><span>{money.format(usdtWallet)}</span><div className="row-actions"><button onClick={() => openOperation("borrowUsdt")}>Borrow</button><button onClick={() => openOperation("repayUsdt")}>Repay</button></div></div><div className="borrow-row"><div className="asset-name"><img src="/assets/fin-loop.svg" alt="" /><div><strong>FnL Collateral</strong></div></div><span>0.00%</span><span>0.00%</span><span>300.00K</span><span>300.00K</span><span>{money.format(collateralWallet)}</span><div className="row-actions"><button onClick={() => openOperation("supplyCollateral")}>Supply</button><button onClick={() => openOperation("withdrawCollateral")}>Withdraw</button></div></div></section>
+      <section className="market-card"><div className="pool-heading"><h3>EAG pool</h3><span>Matured · historical markets</span></div><PoolPositions supplied={eagSupplied} borrowed={0} /><div className="borrow-table-header"><span>Assets</span><span>Supply APY</span><span>Borrow APY</span><span>Market Size</span><span>Liquidity</span><span>Wallet</span><span /></div>{marketRows.map((row, index) => <div className="borrow-row" key={index}><div className="asset-name"><img src={row.icon} alt="" /><div><strong>{row.asset}</strong><span>{row.detail}</span></div></div><span>{row.supply}</span><span>{row.borrow}</span><span>{row.size}<small>${row.size}</small></span><span>{row.liquidity}<small>${row.liquidity}</small></span><span>{row.asset === "EAG" ? money.format(eagWallet) : "0.00"}</span><div className="row-actions">{row.asset === "EAG" ? <><button disabled>Supply</button><button onClick={() => openOperation("withdrawEag")}>Withdraw</button></> : <><button disabled>Borrow</button><button disabled>Repay</button></>}</div></div>)}</section>
     </main>
   );
 }
